@@ -14,7 +14,7 @@
 window.CMS_CONFIG = {
     /* ---------- Supabase ---------- */
     supabaseUrl: "https://izjnlrnwwcljqkrxnkai.supabase.co", // Project URL; do not include /rest/v1/
-    anonKey: "",              // public anon key (safe to ship to the browser)
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6am5scm53d2NsanFrcnhua2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Mjg5MjEsImV4cCI6MjEwMzQwNDkyMX0._GR5dpl2LC5Hq-28RxJVITLNRH7uOn21H0s3tV_nzgs", // public anon key
     table: "cms_content",
     rowId: 1,                 // single-row table; content lives in `data` (jsonb)
 
