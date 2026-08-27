@@ -240,25 +240,26 @@ A no-backend, vanilla-JS CMS drives all front-page content so the layout/markup 
 - [ ] Analytics (Plausible/Umami)
 - [ ] Replace Font Awesome CDN with inline SVG (optional)
 
-## 14. Deployment: GitHub + Supabase (versioned, shared CMS)
+## 14. Deployment: Coolify + GitHub + Supabase (versioned, shared CMS)
 
-Static site is hosted on **GitHub Pages**; content is edited in the admin dashboard and stored in **Supabase** (Postgres + Auth + Storage). A GitHub Action **bakes** the live content into the repo (`cms-content.json`) so the public site is fully static and versioned in Git.
+Static site is hosted on **Coolify** from a Docker/Nginx container; content is edited in the admin dashboard and stored in **Supabase** (Postgres + Auth + Storage). A GitHub Action **bakes** the live content into the repo (`cms-content.json`) so the public site is fully static and versioned in Git.
 
 - `js/cms-config.js` — placeholders: Supabase URL/anon key, GitHub publish settings. Empty = **Local mode** (browser `localStorage` only).
 - `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from Supabase (admin) or the baked `cms-content.json` (public); `publish()` triggers the GitHub deploy.
 - `admin.html` — authenticated admin login gate, backend mode, and **Publish to Git** button.
 - `cms-content.json` — committed snapshot of the full content model (Git history = content history).
 - `supabase/schema.sql` — `cms_content` table (single `data` jsonb row, id=1) + RLS (public read, authenticated/admin write).
-- `.github/workflows/deploy.yml` — builds & deploys to GitHub Pages on push.
+- `Dockerfile` + `nginx.conf` — serve the static site through Nginx on Coolify.
 - `.github/workflows/publish-content.yml` — on `publish-cms` dispatch (or manual), fetches Supabase → writes `cms-content.json` → commits → redeploys.
 
 ### Setup checklist (fill the placeholders)
 1. Create a Supabase project (free tier is enough); run `supabase/schema.sql`.
 2. Copy Project URL + anon key into `js/cms-config.js`.
-3. Push repo to GitHub; enable **Pages** (source: GitHub Actions).
-4. GitHub repo **Settings → Secrets**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-5. Admin: edit → **Save** (→ Supabase) → **Publish to Git** (→ snapshot + redeploy).
+3. In Coolify, create an Application from this GitHub repository, use the Dockerfile, expose port `80`, and enable auto-deploy.
+4. Configure `www.gozmardynamics.com` in Coolify and point DNS to the Coolify server; enable HTTPS.
+5. GitHub repo **Settings → Secrets**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+6. Admin: edit → **Save** (→ Supabase) → **Publish to Git** (→ snapshot + Coolify redeploy).
 6. Create an admin user in Supabase Auth; `admin.html` requires sign-in when Supabase is configured.
 7. For production, restrict the Supabase write policy to an `admin` claim instead of all authenticated users.
 
-Flow: `Admin → Save → Supabase → Publish → GitHub Action → cms-content.json commit → Pages redeploy`. Visitors hit only static Pages; the DB is touched only by admins.
+Flow: `Admin → Save → Supabase → Publish → GitHub Action → cms-content.json commit → Coolify webhook/redeploy`. Visitors hit only static Coolify content; the DB is touched only by admins.

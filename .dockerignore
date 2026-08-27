@@ -1,0 +1,8 @@
+.git
+.github
+.dockerignore
+Dockerfile
+*.log
+node_modules
+Thumbs.db
+.DS_Store
