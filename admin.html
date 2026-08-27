@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gozmar CMS — Admin Dashboard</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <header class="admin-topbar">
+        <div class="admin-brand"><i class="fas fa-cube"></i> Gozmar <span>CMS</span></div>
+        <div class="admin-actions">
+            <span id="cmsMode" class="dirty-flag" hidden></span>
+            <span id="dirtyFlag" class="dirty-flag" hidden>● Unsaved changes</span>
+            <a href="index.html" target="_blank" class="btn btn-outline btn-sm">View site ↗</a>
+            <button id="btnPublish" class="btn btn-outline btn-sm">Publish to Git</button>
+            <button id="btnImport" class="btn btn-outline btn-sm">Import</button>
+            <button id="btnExport" class="btn btn-outline btn-sm">Export</button>
+            <button id="btnReset" class="btn btn-outline btn-sm">Reset</button>
+            <button id="btnSave" class="btn btn-primary btn-sm">Save changes</button>
+            <input type="file" id="fileImport" accept="application/json" hidden>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <nav class="admin-sidebar" id="tabs" aria-label="Content sections"></nav>
+        <main class="admin-main">
+            <div id="adminRoot" class="admin-form"></div>
+        </main>
+        <aside class="admin-preview">
+            <div class="preview-head">Live preview</div>
+            <div id="preview" class="preview-body"></div>
+        </aside>
+    </div>
+
+    <script src="js/cms-config.js"></script>
+    <script src="js/cms-data.js"></script>
+    <script src="js/cms.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
