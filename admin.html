@@ -17,6 +17,7 @@
             <span id="dirtyFlag" class="dirty-flag" hidden>● Unsaved changes</span>
             <a href="index.html" target="_blank" class="btn btn-outline btn-sm">View site ↗</a>
             <button id="btnPublish" class="btn btn-outline btn-sm">Publish to Git</button>
+            <button id="btnSignOut" class="btn btn-outline btn-sm" hidden>Sign out</button>
             <button id="btnImport" class="btn btn-outline btn-sm">Import</button>
             <button id="btnExport" class="btn btn-outline btn-sm">Export</button>
             <button id="btnReset" class="btn btn-outline btn-sm">Reset</button>
@@ -25,7 +26,27 @@
         </div>
     </header>
 
-    <div class="admin-layout">
+    <section id="authGate" class="auth-gate" aria-labelledby="authTitle">
+        <div class="auth-card">
+            <div class="admin-brand auth-brand"><i class="fas fa-lock"></i> Gozmar <span>CMS</span></div>
+            <h1 id="authTitle">Admin sign in</h1>
+            <p>Sign in with your Supabase admin account to manage published content.</p>
+            <form id="loginForm" novalidate>
+                <div class="field">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" autocomplete="username" required>
+                </div>
+                <div class="field">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required>
+                </div>
+                <p id="loginStatus" class="login-status" role="alert" aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary">Sign in</button>
+            </form>
+        </div>
+    </section>
+
+    <div id="adminLayout" class="admin-layout" hidden>
         <nav class="admin-sidebar" id="tabs" aria-label="Content sections"></nav>
         <main class="admin-main">
             <div id="adminRoot" class="admin-form"></div>

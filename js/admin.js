@@ -420,14 +420,70 @@
     /* unsaved-changes guard */
     window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-    /* boot */
-    buildTabs();
-    render();
-    CMS.refreshState().then(function (s) { if (s) { state = s; render(); } });
+    function showDashboard() {
+        var gate = document.getElementById('authGate');
+        var layout = document.getElementById('adminLayout');
+        var signOut = document.getElementById('btnSignOut');
+        if (gate) gate.hidden = true;
+        if (layout) layout.hidden = false;
+        if (signOut) signOut.hidden = false;
+
+        buildTabs();
+        render();
+        CMS.refreshState().then(function (s) { if (s) { state = s; render(); } });
+    }
+
+    function showLogin() {
+        var gate = document.getElementById('authGate');
+        var layout = document.getElementById('adminLayout');
+        var signOut = document.getElementById('btnSignOut');
+        if (gate) gate.hidden = false;
+        if (layout) layout.hidden = true;
+        if (signOut) signOut.hidden = true;
+    }
+
+    var config = window.CMS_CONFIG || {};
+    var authRequired = !!(config.authEnabled && config.supabaseUrl && config.anonKey);
     var modeEl = document.getElementById('cmsMode');
     if (modeEl) {
-        var c = window.CMS_CONFIG || {};
-        modeEl.textContent = (c.supabaseUrl && c.anonKey) ? 'Backend: Supabase' : 'Backend: Local (no backend)';
+        modeEl.textContent = authRequired ? 'Backend: Supabase' : 'Backend: Local (no backend)';
         modeEl.hidden = false;
+    }
+
+    var loginForm = document.getElementById('loginForm');
+    if (loginForm) loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var status = document.getElementById('loginStatus');
+        var email = document.getElementById('loginEmail').value.trim();
+        var password = document.getElementById('loginPassword').value;
+        if (!email || !password) {
+            if (status) status.textContent = 'Enter your email and password.';
+            return;
+        }
+        if (status) status.textContent = 'Signing in…';
+        CMS.signIn(email, password).then(function () {
+            loginForm.reset();
+            if (status) status.textContent = '';
+            showDashboard();
+        }).catch(function (err) {
+            if (status) status.textContent = err.message || 'Sign-in failed.';
+        });
+    });
+
+    var signOutButton = document.getElementById('btnSignOut');
+    if (signOutButton) signOutButton.addEventListener('click', function () {
+        CMS.signOut().then(function () {
+            dirty = false;
+            showLogin();
+        });
+    });
+
+    /* boot: authenticate before exposing the CMS when Supabase is configured */
+    if (authRequired) {
+        var session = CMS.getSession();
+        if (session && session.access_token && (!session.expires_at || session.expires_at > Date.now())) showDashboard();
+        else showLogin();
+    } else {
+        showDashboard();
     }
 })();

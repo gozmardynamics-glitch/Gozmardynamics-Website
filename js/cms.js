@@ -9,6 +9,7 @@
     'use strict';
 
     var STORAGE_KEY = 'gozmar_cms_v1';
+    var AUTH_STORAGE_KEY = 'gozmar_cms_auth_v1';
     var DEFAULTS = window.GOZMAR_DEFAULTS || {};
 
     /* ---------- helpers ---------- */
@@ -186,11 +187,16 @@
     /* ---------- remote / baked loaders ---------- */
     function cfg() { return window.CMS_CONFIG || {}; }
     function useSupabase() { var c = cfg(); return !!(c.supabaseUrl && c.anonKey); }
+    function getSession() {
+        try { return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null'); }
+        catch (e) { return null; }
+    }
     function sbHeaders() {
         var c = cfg();
+        var session = getSession();
         return {
             'apikey': c.anonKey,
-            'Authorization': 'Bearer ' + c.anonKey,
+            'Authorization': 'Bearer ' + (session && session.access_token ? session.access_token : c.anonKey),
             'Content-Type': 'application/json'
         };
     }
@@ -237,6 +243,31 @@
             }
             throw new Error('sb save ' + r.status);
         });
+    }
+    function signIn(email, password) {
+        if (!useSupabase() || typeof fetch !== 'function') return Promise.reject(new Error('Supabase is not configured.'));
+        var c = cfg();
+        return fetch(c.supabaseUrl.replace(/\/$/, '') + '/auth/v1/token?grant_type=password', {
+            method: 'POST',
+            headers: { 'apikey': c.anonKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+        }).then(function (r) {
+            return r.json().then(function (data) {
+                if (!r.ok || !data.access_token) throw new Error(data.error_description || data.msg || 'Sign-in failed.');
+                var session = {
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token || '',
+                    expires_at: Date.now() + ((data.expires_in || 3600) * 1000),
+                    user: data.user || null
+                };
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+                return session;
+            });
+        });
+    }
+    function signOut() {
+        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
+        return Promise.resolve(true);
     }
     function cacheLocal(state) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
@@ -308,7 +339,10 @@
         saveState: saveState,
         clearState: clearState,
         refreshState: refreshState,
-        publish: publish
+        publish: publish,
+        getSession: getSession,
+        signIn: signIn,
+        signOut: signOut
     };
 
     /* Apply saved content on load (does not alter layout), then refresh from

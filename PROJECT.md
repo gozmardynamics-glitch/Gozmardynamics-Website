@@ -246,7 +246,7 @@ Static site is hosted on **GitHub Pages**; content is edited in the admin dashbo
 
 - `js/cms-config.js` — placeholders: Supabase URL/anon key, GitHub publish settings. Empty = **Local mode** (browser `localStorage` only).
 - `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from Supabase (admin) or the baked `cms-content.json` (public); `publish()` triggers the GitHub deploy.
-- `admin.html` — shows backend mode, has a **Publish to Git** button.
+- `admin.html` — authenticated admin login gate, backend mode, and **Publish to Git** button.
 - `cms-content.json` — committed snapshot of the full content model (Git history = content history).
 - `supabase/schema.sql` — `cms_content` table (single `data` jsonb row, id=1) + RLS (public read, authenticated/admin write).
 - `.github/workflows/deploy.yml` — builds & deploys to GitHub Pages on push.
@@ -258,6 +258,7 @@ Static site is hosted on **GitHub Pages**; content is edited in the admin dashbo
 3. Push repo to GitHub; enable **Pages** (source: GitHub Actions).
 4. GitHub repo **Settings → Secrets**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 5. Admin: edit → **Save** (→ Supabase) → **Publish to Git** (→ snapshot + redeploy).
-6. (Optional) Enable Supabase Auth + restrict the write policy to an `admin` claim.
+6. Create an admin user in Supabase Auth; `admin.html` requires sign-in when Supabase is configured.
+7. For production, restrict the Supabase write policy to an `admin` claim instead of all authenticated users.
 
 Flow: `Admin → Save → Supabase → Publish → GitHub Action → cms-content.json commit → Pages redeploy`. Visitors hit only static Pages; the DB is touched only by admins.

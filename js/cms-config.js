@@ -28,5 +28,5 @@ window.CMS_CONFIG = {
     },
 
     /* ---------- Admin login (Supabase Auth) ---------- */
-    authEnabled: false        // when true, wire a login UI; writes require an admin session
+    authEnabled: true         // admin login is required when Supabase is configured
 };
