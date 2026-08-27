@@ -31,7 +31,7 @@ jobs:
           curl -s "$SUPABASE_URL/rest/v1/cms_content?select=data&id=eq.1&limit=1" \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            | jq -r '.[0].data' > cms-content.json
+            | jq -e '.[0].data | objects | select(has("products") and has("site"))' > cms-content.json
           # Pretty-print for clean diffs
           jq . cms-content.json > cms-content.tmp && mv cms-content.tmp cms-content.json
           echo "Fetched $(wc -c < cms-content.json) bytes of content"

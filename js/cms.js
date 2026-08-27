@@ -198,10 +198,14 @@
         var c = cfg();
         return c.supabaseUrl.replace(/\/$/, '') + '/rest/v1/' + c.table;
     }
+    function isValidState(state) {
+        return !!(state && state.products && state.site);
+    }
     function loadBaked() {
         if (typeof fetch !== 'function') return Promise.resolve(null);
         return fetch('cms-content.json', { cache: 'no-cache' })
             .then(function (r) { if (!r.ok) throw new Error('no baked'); return r.json(); })
+            .then(function (data) { return isValidState(data) ? data : null; })
             .catch(function () { return null; });
     }
     function loadFromSupabase() {
@@ -209,7 +213,10 @@
         var c = cfg();
         return fetch(sbUrl() + '?select=data&id=eq.' + c.rowId + '&limit=1', { headers: sbHeaders() })
             .then(function (r) { if (!r.ok) throw new Error('sb load ' + r.status); return r.json(); })
-            .then(function (rows) { return (rows && rows[0] && rows[0].data) ? rows[0].data : null; });
+            .then(function (rows) {
+                var data = rows && rows[0] && rows[0].data;
+                return isValidState(data) ? data : null;
+            });
     }
     function saveToSupabase(state) {
         if (typeof fetch !== 'function') return Promise.resolve(false);
@@ -266,7 +273,10 @@
     function loadState() {
         try {
             var raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) return JSON.parse(raw);
+            if (raw) {
+                var parsed = JSON.parse(raw);
+                if (isValidState(parsed)) return parsed;
+            }
         } catch (e) { /* ignore */ }
         return deepClone(DEFAULTS);
     }
