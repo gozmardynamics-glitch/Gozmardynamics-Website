@@ -13,7 +13,7 @@
    ========================================================================== */
 window.CMS_CONFIG = {
     /* ---------- Supabase ---------- */
-    supabaseUrl: "",          // e.g. https://abcd1234.supabase.co
+    supabaseUrl: "https://izjnlrnwwcljqkrxnkai.supabase.co", // Project URL; do not include /rest/v1/
     anonKey: "",              // public anon key (safe to ship to the browser)
     table: "cms_content",
     rowId: 1,                 // single-row table; content lives in `data` (jsonb)
