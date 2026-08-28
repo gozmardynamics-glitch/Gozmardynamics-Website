@@ -72,7 +72,15 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-
+    <!--
+    DIRECTION CONTRACT - Warm Aurora (bold extension of the Gozmar system, user-pinned brief)
+    THESIS: enterprise AI that feels human - the monochrome Apple skeleton wrapped in a living aurora of electric blue, violet, and warm amber.
+    OWN-WORLD: white/light surfaces with layered depth shadows, glass panels, 3D pill buttons with real press states, gradient ink reserved for the brand accent, one dark ink section for pacing.
+    STORY: visitor feels premium warmth within seconds, trusts the stack (stats + integrations), finds a product, starts a free trial.
+    FIRST VIEWPORT: animated aurora orbs + dot grid behind a left-aligned headline with a shifting gradient accent; three floating glass product chips on the right; badge pill and dual 3D CTAs below.
+    FORM: extension of the incumbent landing structure (hero > stats > trust strip > about > products > values > testimonials > faq > contact > cta band > footer); seed: user-pinned, no roll.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <a class="skip-link" href="#main">Skip to content</a>
 
     <!-- Dark Mode Toggle -->
@@ -105,12 +113,35 @@
 
         <!-- ========== HERO ========== -->
         <section class="hero" id="home" aria-label="Hero">
-            <div class="container hero-content reveal">
-                <h1>The future of work and life, <em>powered by AI.</em></h1>
-                <p>Gozmar Dynamics builds intelligent software that automates the mundane, amplifies productivity, and connects people — so you can focus on what matters.</p>
-                <div class="hero-buttons">
-                    <a href="#products" class="btn btn-primary">Explore Our Products</a>
-                    <a href="#about" class="btn btn-outline">Learn More</a>
+            <div class="hero-bg" aria-hidden="true">
+                <span class="orb orb-blue"></span>
+                <span class="orb orb-violet"></span>
+                <span class="orb orb-warm"></span>
+                <span class="hero-grid"></span>
+            </div>
+            <div class="container hero-inner">
+                <div class="hero-content reveal">
+                    <span class="hero-badge"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Six AI products. One platform.</span>
+                    <h1>The future of work and life, <em>powered by AI.</em></h1>
+                    <p>Gozmar Dynamics builds intelligent software that automates the mundane, amplifies productivity, and connects people — so you can focus on what matters.</p>
+                    <div class="hero-buttons">
+                        <a href="#products" class="btn btn-primary">Explore Our Products</a>
+                        <a href="#about" class="btn btn-outline">Learn More</a>
+                    </div>
+                </div>
+                <div class="hero-chips" aria-hidden="true">
+                    <div class="chip chip-1">
+                        <i class="fas fa-folder-open"></i>
+                        <div><strong>Gozmar DMS</strong><span>Files that file themselves</span></div>
+                    </div>
+                    <div class="chip chip-2">
+                        <i class="fas fa-truck-fast"></i>
+                        <div><strong>Gozmar Freight</strong><span>Delays predicted early</span></div>
+                    </div>
+                    <div class="chip chip-3">
+                        <i class="fas fa-list-check"></i>
+                        <div><strong>Gozmar Task</strong><span>Priorities that sort themselves</span></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -133,6 +164,21 @@
                 <div class="stat reveal">
                     <span class="stat-number">24/7</span>
                     <span class="stat-label">Support</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== TRUST / COMPATIBILITY ========== -->
+        <section class="trust-strip" aria-label="Works with your stack">
+            <div class="container">
+                <p class="trust-title reveal">Plays well with the tools you already use</p>
+                <div class="trust-grid reveal">
+                    <span class="trust-item"><i class="fa-brands fa-slack" aria-hidden="true"></i> Slack</span>
+                    <span class="trust-item"><i class="fa-brands fa-microsoft" aria-hidden="true"></i> Microsoft 365</span>
+                    <span class="trust-item"><i class="fa-brands fa-google" aria-hidden="true"></i> Google Workspace</span>
+                    <span class="trust-item"><i class="fa-brands fa-apple" aria-hidden="true"></i> iOS</span>
+                    <span class="trust-item"><i class="fa-brands fa-android" aria-hidden="true"></i> Android</span>
+                    <span class="trust-item"><i class="fa-brands fa-windows" aria-hidden="true"></i> Windows</span>
                 </div>
             </div>
         </section>
@@ -1009,6 +1055,7 @@
                         <p>Web access on any modern browser, plus dedicated iOS and Android apps for mobile use.</p>
                     </details>
                 </div>
+                <p class="faq-cta reveal">Still have questions? <a href="#contact">Get in touch</a> — we love a good question.</p>
             </div>
         </section>
 
@@ -1016,33 +1063,54 @@
         <section class="contact-section section" id="contact" aria-label="Contact us">
             <div class="container">
                 <h2 class="reveal" style="text-align:center;">Let's build something intelligent together.</h2>
-                <div class="contact-form reveal">
-                    <form id="contactForm" novalidate>
-                        <div class="form-group">
-                            <label for="name">Name</label>
-                            <input type="text" id="name" name="name" required autocomplete="name">
+                <p class="contact-lede reveal">Tell us what you're trying to solve — we'll show you what effortless looks like.</p>
+                <div class="contact-layout">
+                    <div class="contact-form reveal">
+                        <form id="contactForm" novalidate>
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" id="name" name="name" required autocomplete="name">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required autocomplete="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="message">Message</label>
+                                <textarea id="message" name="message" required></textarea>
+                            </div>
+                            <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        </form>
+                    </div>
+                    <aside class="contact-card reveal" aria-label="Contact details">
+                        <h3>Talk to a human</h3>
+                        <div class="contact-info">
+                            <p><i class="fas fa-envelope" aria-hidden="true"></i> info@gozmardynamics.com</p>
+                            <p><i class="fas fa-phone" aria-hidden="true"></i> +1 (800) 555-0123</p>
+                            <p><i class="fas fa-globe" aria-hidden="true"></i> Serving clients worldwide</p>
                         </div>
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" name="email" required autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="message">Message</label>
-                            <textarea id="message" name="message" required></textarea>
-                        </div>
-                        <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
-                        <button type="submit" class="btn btn-primary">Send Message</button>
-                    </form>
-                </div>
-                <div class="contact-info">
-                    <p><i class="fas fa-envelope" aria-hidden="true"></i> info@gozmardynamics.com</p>
-                    <p><i class="fas fa-phone" aria-hidden="true"></i> +1 (800) 555-0123</p>
-                    <p><i class="fas fa-globe" aria-hidden="true"></i> Serving clients worldwide</p>
+                        <p class="contact-note"><i class="fas fa-clock" aria-hidden="true"></i> Around-the-clock support on every plan.</p>
+                    </aside>
                 </div>
             </div>
         </section>
 
     </main>
+
+    <!-- ========== CTA BAND ========== -->
+    <section class="cta-band" aria-label="Get started">
+        <div class="container">
+            <div class="cta-panel reveal">
+                <h2>Ready to amplify what your team can do?</h2>
+                <p>Start a 14-day free trial on any product — no credit card required.</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-light">Start Your Free Trial</a>
+                    <a href="#contact" class="btn btn-ghost">Talk to Our Team</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- ========== FOOTER ========== -->
     <footer aria-label="Footer">

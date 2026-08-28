@@ -144,6 +144,45 @@
         revealElements.forEach(function (el) { observer.observe(el); });
     }
 
+    /* ---------- Stat count-up (numbers rise as the band scrolls in) ---------- */
+    function animateCount(el) {
+        var original = el.textContent;
+        var m = original.match(/^([^0-9]*)([0-9]+(?:\.[0-9]+)?)([\s\S]*)$/);
+        if (!m) return;
+        if (prefersReducedMotion || typeof window.requestAnimationFrame !== 'function') return;
+
+        var target = parseFloat(m[2]);
+        var decimals = (m[2].split('.')[1] || '').length;
+        var duration = 1400;
+        var start = null;
+
+        function frame(ts) {
+            if (start === null) start = ts;
+            var t = Math.min((ts - start) / duration, 1);
+            var eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+            el.textContent = m[1] + (target * eased).toFixed(decimals) + m[3];
+            if (t < 1) {
+                window.requestAnimationFrame(frame);
+            } else {
+                el.textContent = original; // exact final string, always
+            }
+        }
+        window.requestAnimationFrame(frame);
+    }
+
+    var statNumbers = document.querySelectorAll('.stat-number');
+    if (!prefersReducedMotion && 'IntersectionObserver' in window && statNumbers.length) {
+        var statObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    animateCount(entry.target);
+                    statObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+        statNumbers.forEach(function (el) { statObserver.observe(el); });
+    }
+
     /* ---------- Modals ---------- */
     var modals = document.querySelectorAll('.modal');
     var lastFocused = null;
