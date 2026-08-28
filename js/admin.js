@@ -6,7 +6,7 @@
 (function () {
     'use strict';
 
-    window.CMS_ADMIN = true; // tells cms.js to use the live store (Supabase) when configured
+    window.CMS_ADMIN = true; // tells cms.js to use the live store (PocketBase) when configured
 
     var state = CMS.loadState();
     var dirty = false;
@@ -410,11 +410,7 @@
 
     var btnPublish = document.getElementById('btnPublish');
     if (btnPublish) btnPublish.addEventListener('click', function () {
-        CMS.publish().then(function (ok) {
-            toast(ok ? 'Publish triggered — GitHub will snapshot content to Git.' : 'Publish failed');
-        }).catch(function () {
-            toast('Publish not configured. Run “Publish CMS content to Git” in GitHub Actions.');
-        });
+        toast('Content saves directly to PocketBase — no publish step needed.');
     });
 
     /* unsaved-changes guard */
@@ -443,10 +439,10 @@
     }
 
     var config = window.CMS_CONFIG || {};
-    var authRequired = !!(config.authEnabled && config.supabaseUrl && config.anonKey);
+    var authRequired = !!(config.authEnabled && config.pocketbaseUrl);
     var modeEl = document.getElementById('cmsMode');
     if (modeEl) {
-        modeEl.textContent = authRequired ? 'Backend: Supabase' : 'Backend: Local (no backend)';
+        modeEl.textContent = authRequired ? 'Backend: PocketBase' : 'Backend: Local (no backend)';
         modeEl.hidden = false;
     }
 
@@ -478,7 +474,7 @@
         });
     });
 
-    /* boot: authenticate before exposing the CMS when Supabase is configured */
+    /* boot: authenticate before exposing the CMS when PocketBase is configured */
     if (authRequired) {
         var session = CMS.getSession();
         if (session && session.access_token && (!session.expires_at || session.expires_at > Date.now())) showDashboard();

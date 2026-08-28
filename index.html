@@ -47,6 +47,23 @@
     }
     </script>
 
+    <!-- Google Analytics (configure measurement ID in js/cms-config.js) -->
+    <script>
+    (function () {
+        var id = (window.CMS_CONFIG && window.CMS_CONFIG.gaMeasurementId) || '';
+        if (id) {
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+            document.head.appendChild(s);
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', id);
+        }
+    })();
+    </script>
+
     <!-- Font Awesome (icons) -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin>

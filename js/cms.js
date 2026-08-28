@@ -184,84 +184,84 @@
         if (state.site) renderSite(state.site);
     }
 
-    /* ---------- remote / baked loaders ---------- */
+    /* ---------- PocketBase helpers ---------- */
     function cfg() { return window.CMS_CONFIG || {}; }
-    function useSupabase() { var c = cfg(); return !!(c.supabaseUrl && c.anonKey); }
+    function usePocketBase() { var c = cfg(); return !!(c.pocketbaseUrl); }
     function getSession() {
-        try { return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null'); }
-        catch (e) { return null; }
+        try { return localStorage.getItem(AUTH_STORAGE_KEY) || ''; }
+        catch (e) { return ''; }
     }
-    function sbHeaders() {
-        var c = cfg();
-        var session = getSession();
-        return {
-            'apikey': c.anonKey,
-            'Authorization': 'Bearer ' + (session && session.access_token ? session.access_token : c.anonKey),
-            'Content-Type': 'application/json'
-        };
+    function pbHeaders() {
+        var token = getSession();
+        var h = { 'Content-Type': 'application/json' };
+        if (token) h['Authorization'] = token;
+        return h;
     }
-    function sbUrl() {
+    function pbUrl(collection) {
         var c = cfg();
-        return c.supabaseUrl.replace(/\/$/, '') + '/rest/v1/' + c.table;
+        return c.pocketbaseUrl.replace(/\/$/, '') + '/api/collections/' + (collection || c.collection) + '/records';
     }
     function isValidState(state) {
         return !!(state && state.products && state.site);
     }
-    function loadBaked() {
+
+    /* ---------- load from PocketBase ---------- */
+    function loadFromPocketBase() {
         if (typeof fetch !== 'function') return Promise.resolve(null);
-        return fetch('cms-content.json', { cache: 'no-cache' })
-            .then(function (r) { if (!r.ok) throw new Error('no baked'); return r.json(); })
-            .then(function (data) { return isValidState(data) ? data : null; })
-            .catch(function () { return null; });
-    }
-    function loadFromSupabase() {
-        if (typeof fetch !== 'function') return Promise.resolve(null);
-        var c = cfg();
-        return fetch(sbUrl() + '?select=data&id=eq.' + c.rowId + '&limit=1', { headers: sbHeaders() })
-            .then(function (r) { if (!r.ok) throw new Error('sb load ' + r.status); return r.json(); })
-            .then(function (rows) {
-                var data = rows && rows[0] && rows[0].data;
-                return isValidState(data) ? data : null;
+        return fetch(pbUrl() + '?limit=1')
+            .then(function (r) { if (!r.ok) throw new Error('pb load ' + r.status); return r.json(); })
+            .then(function (data) {
+                if (data.items && data.items.length > 0) {
+                    var record = data.items[0];
+                    var content = typeof record.data === 'string' ? JSON.parse(record.data) : record.data;
+                    return isValidState(content) ? content : null;
+                }
+                return null;
             });
     }
-    function saveToSupabase(state) {
+
+    /* ---------- save to PocketBase ---------- */
+    function saveToPocketBase(state) {
         if (typeof fetch !== 'function') return Promise.resolve(false);
-        var c = cfg();
-        var body = { id: c.rowId, data: state, updated_at: new Date().toISOString() };
-        return fetch(sbUrl() + '?id=eq.' + c.rowId, {
-            method: 'PATCH',
-            headers: sbHeaders(),
-            body: JSON.stringify({ data: state, updated_at: body.updated_at })
-        }).then(function (r) {
-            if (r.ok) return true;
-            if (r.status === 404) {
-                return fetch(sbUrl(), {
-                    method: 'POST',
-                    headers: sbHeaders(),
-                    body: JSON.stringify(body)
-                }).then(function (r2) { if (!r2.ok) throw new Error('sb save ' + r2.status); return true; });
-            }
-            throw new Error('sb save ' + r.status);
-        });
+        var body = JSON.stringify({ data: state });
+        return fetch(pbUrl() + '?limit=1')
+            .then(function (r) { if (!r.ok) throw new Error('pb check ' + r.status); return r.json(); })
+            .then(function (data) {
+                if (data.items && data.items.length > 0) {
+                    var recordId = data.items[0].id;
+                    return fetch(pbUrl() + '/' + recordId, {
+                        method: 'PATCH',
+                        headers: pbHeaders(),
+                        body: body
+                    });
+                } else {
+                    return fetch(pbUrl(), {
+                        method: 'POST',
+                        headers: pbHeaders(),
+                        body: body
+                    });
+                }
+            })
+            .then(function (r) {
+                if (!r.ok) throw new Error('pb save ' + r.status);
+                return true;
+            });
     }
+
+    /* ---------- auth (PocketBase) ---------- */
     function signIn(email, password) {
-        if (!useSupabase() || typeof fetch !== 'function') return Promise.reject(new Error('Supabase is not configured.'));
+        if (!usePocketBase() || typeof fetch !== 'function') return Promise.reject(new Error('PocketBase is not configured.'));
         var c = cfg();
-        return fetch(c.supabaseUrl.replace(/\/$/, '') + '/auth/v1/token?grant_type=password', {
+        var url = c.pocketbaseUrl.replace(/\/$/, '') + '/api/collections/' + c.authCollection + '/auth-with-password';
+        return fetch(url, {
             method: 'POST',
-            headers: { 'apikey': c.anonKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: password })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: email, password: password })
         }).then(function (r) {
             return r.json().then(function (data) {
-                if (!r.ok || !data.access_token) throw new Error(data.error_description || data.msg || 'Sign-in failed.');
-                var session = {
-                    access_token: data.access_token,
-                    refresh_token: data.refresh_token || '',
-                    expires_at: Date.now() + ((data.expires_in || 3600) * 1000),
-                    user: data.user || null
-                };
-                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-                return session;
+                if (!r.ok || !data.token) throw new Error(data.message || 'Sign-in failed.');
+                localStorage.setItem(AUTH_STORAGE_KEY, data.token);
+                return data;
             });
         });
     }
@@ -269,35 +269,22 @@
         try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) {}
         return Promise.resolve(true);
     }
+
+    /* ---------- localStorage fallback ---------- */
     function cacheLocal(state) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
     }
 
-    /* Refreshes content from the live store (Supabase, admin) or the baked Git
-       file (public). Falls back silently to current state if unavailable. */
+    /* Refreshes content from PocketBase (admin) or localStorage (public). */
     function refreshState() {
         var admin = !!window.CMS_ADMIN;
-        if (admin && useSupabase()) {
-            return loadFromSupabase().then(function (data) {
+        if (admin && usePocketBase()) {
+            return loadFromPocketBase().then(function (data) {
                 if (!data) return null;
                 applyState(data); cacheLocal(data); return data;
             }).catch(function () { return null; });
         }
-        return loadBaked().then(function (b) {
-            if (b) { applyState(b); cacheLocal(b); }
-            return b;
-        });
-    }
-
-    function publish() {
-        var g = (cfg().github) || {};
-        if (!g.enabled || !g.token) return Promise.reject(new Error('disabled'));
-        var url = 'https://api.github.com/repos/' + g.owner + '/' + g.repo + '/dispatches';
-        return fetch(url, {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + g.token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event_type: 'publish-cms' })
-        }).then(function (r) { return r.ok; });
+        return Promise.resolve(null);
     }
 
     /* ---------- load/save (localStorage is the offline fallback) ---------- */
@@ -312,8 +299,8 @@
         return deepClone(DEFAULTS);
     }
     function saveState(state) {
-        if (window.CMS_ADMIN && useSupabase()) {
-            return saveToSupabase(state).then(function (ok) {
+        if (window.CMS_ADMIN && usePocketBase()) {
+            return saveToPocketBase(state).then(function (ok) {
                 cacheLocal(state); return ok;
             }).catch(function () { cacheLocal(state); return false; });
         }
@@ -321,8 +308,8 @@
         return Promise.resolve(true);
     }
     function clearState() {
-        if (window.CMS_ADMIN && useSupabase()) {
-            return saveToSupabase(deepClone(DEFAULTS)).then(function () {
+        if (window.CMS_ADMIN && usePocketBase()) {
+            return saveToPocketBase(deepClone(DEFAULTS)).then(function () {
                 try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
                 return true;
             }).catch(function () { return false; });
@@ -339,14 +326,13 @@
         saveState: saveState,
         clearState: clearState,
         refreshState: refreshState,
-        publish: publish,
         getSession: getSession,
         signIn: signIn,
         signOut: signOut
     };
 
     /* Apply saved content on load (does not alter layout), then refresh from
-       the live store / baked Git file when available. */
+       PocketBase when available. */
     function boot() { applyState(loadState()); refreshState(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);

@@ -227,7 +227,7 @@ A no-backend, vanilla-JS CMS drives all front-page content so the layout/markup 
 - `admin.html` + `css/admin.css` + `js/admin.js` — dashboard with one tab per item (6 products + 8 site sections). Each product tab edits: details/descriptions, media (hero + 3 gallery URLs with live thumbnail preview), feature list, and tiered pricing with **quick price correction** + **volume discount %** + **min seats** per tier. Top bar: Save / Reset / Export JSON / Import JSON. Live preview pane.
 - `www.gozmardynamics.com` is wired as canonical, OG, and JSON-LD URL.
 
-**Note:** storage is per-browser `localStorage` (no server). To share content across users/admins, swap `CMS.saveState`/`loadState` for a backend (Supabase/REST) — the admin UI and data model already isolate that behind those two functions. Add admin auth before exposing `admin.html` publicly.
+**Note:** storage is per-browser `localStorage` (no server). To share content across users/admins, connect to PocketBase (self-hosted on Coolify) — the admin UI and data model already isolate that behind `CMS.saveState`/`loadState`. Add admin auth before exposing `admin.html` publicly.
 
 ### Roadmap status (updated)
 - [x] Per-product detail pages / in-page sections
@@ -235,31 +235,37 @@ A no-backend, vanilla-JS CMS drives all front-page content so the layout/markup 
 - [x] `www.gozmardynamics.com` wired (canonical/OG/JSON-LD)
 - [ ] Replace Unsplash placeholders with licensed imagery (+ real `og-image.png`)
 - [ ] Wire contact form + newsletter to a real backend
-- [ ] Move CMS storage to a shared backend + add admin authentication
+- [x] Move CMS storage to a shared backend (PocketBase) + add admin authentication
 - [ ] Real legal review of Terms & Privacy
-- [ ] Analytics (Plausible/Umami)
+- [x] Analytics (Google Analytics � configure measurement ID in cms-config.js)
 - [ ] Replace Font Awesome CDN with inline SVG (optional)
 
-## 14. Deployment: Coolify + GitHub + Supabase (versioned, shared CMS)
+## 14. Deployment: Coolify + PocketBase (self-hosted CMS)
 
-Static site is hosted on **Coolify** from a Docker/Nginx container; content is edited in the admin dashboard and stored in **Supabase** (Postgres + Auth + Storage). A GitHub Action **bakes** the live content into the repo (`cms-content.json`) so the public site is fully static and versioned in Git.
+Static site is hosted on **Coolify** from a Docker/Nginx container; content is edited in the admin dashboard and stored in **PocketBase** (self-hosted on Coolify). No GitHub Actions needed — content saves directly to PocketBase.
 
-- `js/cms-config.js` — placeholders: Supabase URL/anon key, GitHub publish settings. Empty = **Local mode** (browser `localStorage` only).
-- `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from Supabase (admin) or the baked `cms-content.json` (public); `publish()` triggers the GitHub deploy.
-- `admin.html` — authenticated admin login gate, backend mode, and **Publish to Git** button.
-- `cms-content.json` — committed snapshot of the full content model (Git history = content history).
-- `supabase/schema.sql` — `cms_content` table (single `data` jsonb row, id=1) + RLS (public read, authenticated/admin write).
+- `js/cms-config.js` — PocketBase URL, collection name, Google Analytics ID. Empty = **Local mode** (browser `localStorage` only).
+- `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from PocketBase (admin); `signIn()`/`signOut()` handle PocketBase auth.
+- `admin.html` — authenticated admin login gate, backend mode indicator.
 - `Dockerfile` + `nginx.conf` — serve the static site through Nginx on Coolify.
-- `.github/workflows/publish-content.yml` — on `publish-cms` dispatch (or manual), fetches Supabase → writes `cms-content.json` → commits → redeploys.
 
-### Setup checklist (fill the placeholders)
-1. Create a Supabase project (free tier is enough); run `supabase/schema.sql`.
-2. Copy Project URL + anon key into `js/cms-config.js`.
-3. In Coolify, create an Application from this GitHub repository, use the Dockerfile, expose port `80`, and enable auto-deploy.
-4. Configure `www.gozmardynamics.com` in Coolify and point DNS to the Coolify server; enable HTTPS.
-5. GitHub repo **Settings → Secrets**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-6. Admin: edit → **Save** (→ Supabase) → **Publish to Git** (→ snapshot + Coolify redeploy).
-6. Create an admin user in Supabase Auth; `admin.html` requires sign-in when Supabase is configured.
-7. For production, restrict the Supabase write policy to an `admin` claim instead of all authenticated users.
+### Services on Coolify
+| Service | Purpose | Type |
+|---|---|---|
+| Gozmar website | Static site (nginx) | Dockerfile |
+| PocketBase | CMS database + auth + API | One-click service |
+| Uptime Kuma | Monitor website uptime | One-click service |
 
-Flow: `Admin → Save → Supabase → Publish → GitHub Action → cms-content.json commit → Coolify webhook/redeploy`. Visitors hit only static Coolify content; the DB is touched only by admins.
+### Setup checklist
+1. Deploy **PocketBase** on Coolify (one-click service).
+2. In PocketBase admin (`/_/`), create a collection called `cms_content` with a JSON field called `data`.
+3. Set collection rules: list/search = `""` (public), create/update = `"@request.auth.id != ''"`.
+4. Create an admin user in the `users` collection.
+5. Copy the PocketBase URL into `js/cms-config.js`.
+6. In Coolify, create an Application from this GitHub repository, use the Dockerfile, expose port `80`, and enable auto-deploy.
+7. Configure `www.gozmardynamics.com` in Coolify and point DNS to the Coolify server; enable HTTPS.
+8. Deploy **Uptime Kuma** on Coolify and add a monitor for `https://www.gozmardynamics.com`.
+9. Create a Google Analytics property at https://analytics.google.com/ and add the measurement ID to `js/cms-config.js`.
+10. Open `admin.html`, sign in with your PocketBase user, edit content, and click **Save changes**.
+
+Flow: `Admin → Save → PocketBase (on Coolify)`. Visitors load the static site which reads content from PocketBase's API at runtime. No baking, no redeployment for content changes.
