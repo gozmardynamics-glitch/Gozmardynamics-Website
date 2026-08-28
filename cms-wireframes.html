@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gozmar CMS — Wireframes & Architecture Preview</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f1f5;color:#1d1d1f}
+a{color:inherit}
+.topbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#1d1d1f;color:#fff;position:sticky;top:0;z-index:10}
+.brand{font-weight:700;font-size:1.1rem}.brand span{color:#5ac8fa}
+.pill{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.12);padding:5px 10px;border-radius:999px}
+.btn{border-radius:999px;padding:8px 14px;font-size:.85rem;font-weight:600;border:1px solid transparent;cursor:pointer}
+.btn-primary{background:linear-gradient(180deg,#0a84ff,#0071e3);color:#fff;border-bottom:3px solid #0052a8;box-shadow:0 8px 20px rgba(0,113,227,.25)}
+.btn-outline{background:#fff;border-color:#d2d2d7;color:#1d1d1f}
+.btn-ghost{background:transparent;border-color:rgba(255,255,255,.3);color:#fff}
+.shell{display:grid;grid-template-columns:230px 1fr 360px;min-height:calc(100vh - 60px)}
+.sidebar{background:#fff;border-right:1px solid #d2d2d7;padding:14px 10px;overflow:auto}
+.group{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#86868b;font-weight:700;padding:14px 12px 6px}
+.tab{width:100%;text-align:left;display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;border:none;background:none;cursor:pointer;font-size:.92rem}
+.tab.active{background:#0071e3;color:#fff}.tab:hover:not(.active){background:#f0f1f5}
+.main{overflow:auto;padding:28px 24px}
+.preview{background:#fff;border-left:1px solid #d2d2d7;overflow:auto}
+.preview-head{position:sticky;top:0;background:#1d1d1f;color:#fff;padding:12px 16px;font-size:.85rem;font-weight:600}
+.card{background:#fff;border:1px solid #d2d2d7;border-radius:16px;padding:18px;margin-bottom:16px}
+.card.editing{border-color:#0071e3;box-shadow:0 4px 14px rgba(0,113,227,.12);outline:1px solid rgba(0,113,227,.18)}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.badge{font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:999px}
+.badge-view{background:#e6f1ff;color:#0071e3}.badge-edit{background:#0071e3;color:#fff}
+.badge-draft{background:#fff8e6;color:#7a5a00;border:1px solid #ffd60a}
+.field label{display:block;font-size:.82rem;font-weight:600;margin:10px 0 6px}
+.field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid #d2d2d7;border-radius:10px;font:inherit;font-size:.92rem}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:#0071e3;box-shadow:0 0 0 3px rgba(0,113,227,.18)}
+.thumb{width:122px;height:78px;border-radius:10px;border:1px dashed #d2d2d7;background:#f0f1f5;background-size:cover;background-position:center;display:grid;place-items:center;color:#86868b;font-size:.7rem;text-align:center;flex-shrink:0}
+.row{display:flex;gap:12px;align-items:flex-start}.row .field{flex:1}
+.two{grid-template-columns:1fr 1fr;display:grid;gap:12px}
+.tier{border:1px solid #d2d2d7;border-radius:14px;padding:14px;margin-bottom:12px}
+.tier.featured{border-color:#0071e3;box-shadow:0 4px 14px rgba(0,113,227,.12)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:.72rem;background:#f5f5f7;border:1px solid #e8e8ed;border-radius:999px;padding:4px 8px}
+.wizard-steps{display:flex;gap:6px;align-items:center;overflow:auto;padding-bottom:6px}
+.step{white-space:nowrap;font-size:.78rem;font-weight:700;padding:7px 10px;border-radius:999px;border:1px solid #d2d2d7;background:#fff;display:inline-flex;gap:6px;align-items:center}
+.step.active{background:#0071e3;color:#fff;border-color:#0071e3}
+.step.done{background:#e6f5ec;color:#0a7a3a;border-color:#b7e5c7}
+.drop{border:2px dashed #d2d2d7;border-radius:12px;padding:14px;text-align:center;color:#86868b;background:#fbfbfd}
+.drop.drag{border-color:#0071e3;background:#e6f1ff;color:#0071e3}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d1d1f;color:#fff;padding:10px 18px;border-radius:999px;font-size:.88rem;opacity:0;pointer-events:none;transition:.2s}
+.toast.show{opacity:1}
+@media(max-width:1100px){.shell{grid-template-columns:200px 1fr}.preview{display:none}}
+@media(max-width:700px){.shell{grid-template-columns:1fr}.sidebar{display:none}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><i class="fas fa-cube"></i> Gozmar <span>CMS</span> <span class="pill">Warm Aurora · Scalable</span></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="color:#ffd60a;font-size:.85rem">● Unsaved</span>
+    <a href="index.html" target="_blank" class="btn btn-ghost" style="text-decoration:none">View site ↗</a>
+    <a href="admin.html" class="btn btn-ghost" style="text-decoration:none">Open admin.html</a>
+    <button class="btn btn-primary" onclick="toast('Wireframe only — open admin.html to edit live')">Save changes</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidebar" aria-label="Sections">
+    <div class="group">Products</div>
+    <button class="tab active"><i class="fas fa-cube"></i> Gozmar DMS</button>
+    <button class="tab"><i class="fas fa-cube"></i> My Family</button>
+    <button class="tab"><i class="fas fa-cube"></i> Gozmar Freight</button>
+    <button class="tab"><i class="fas fa-cube"></i> Mylife</button>
+    <button class="tab"><i class="fas fa-cube"></i> Gozmar Task</button>
+    <button class="tab"><i class="fas fa-cube"></i> Grey Auction</button>
+    <div class="group">Site</div>
+    <button class="tab"><i class="fas fa-bullhorn"></i> Hero</button>
+    <button class="tab"><i class="fas fa-building"></i> About</button>
+    <button class="tab"><i class="fas fa-chart-bar"></i> Stats band</button>
+    <button class="tab"><i class="fas fa-star"></i> Values</button>
+    <button class="tab"><i class="fas fa-quote-right"></i> Testimonials</button>
+    <button class="tab"><i class="fas fa-question"></i> FAQ</button>
+    <button class="tab"><i class="fas fa-envelope"></i> Contact</button>
+    <button class="tab"><i class="fas fa-shoe-prints"></i> Footer</button>
+    <div style="margin-top:14px;padding:10px 12px;background:#f5f5f7;border-radius:12px;font-size:.78rem;color:#6e6e73">Folder: <code>src/</code> — see CMS_ARCHITECTURE.md</div>
+  </nav>
+
+  <main class="main">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <h1 style="margin:0;font-size:1.25rem">Gozmar DMS — Product</h1>
+      <span class="badge badge-draft">Draft — not live</span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <label style="font-size:.82rem;display:flex;gap:6px;align-items:center"><input type="checkbox" checked> Draft mode</label>
+        <button class="btn btn-outline" style="padding:6px 12px">Preview</button>
+        <button class="btn btn-primary" style="padding:6px 14px" onclick="toast('✓ Published live — PocketBase PATCH')">Publish Live</button>
+      </span>
+    </div>
+
+    <!-- Dual-view SectionBlock: VIEWING -->
+    <div class="card" id="viewCard">
+      <div class="card-head">
+        <i class="fas fa-info-circle"></i><strong>Details & descriptions</strong>
+        <span class="badge badge-view">Viewing</span>
+        <span style="margin-left:auto"><button class="btn btn-outline" style="padding:6px 12px" onclick="toggleEdit(true)"><i class="fas fa-pen"></i> Edit</button></span>
+      </div>
+      <div style="color:#1d1d1f;font-size:.92rem;line-height:1.5">
+        <div class="chips"><span class="chip">Tagline: Corporate Document Management</span><span class="chip">Title: Gozmar DMS</span><span class="chip">CTA: Discover DMS</span></div>
+        <p style="color:#6e6e73;margin:10px 0 0">An AI-powered document management system that organises, secures, and retrieves your corporate files with zero friction…</p>
+        <p style="color:#6e6e73">Detail intro: Gozmar DMS turns the chaos of corporate files into a calm, searchable, secure system of record.</p>
+        <div style="margin-top:8px;font-size:.78rem;color:#86868b"><i class="fas fa-eye"></i> Current State View — live text as visitors see it. Click Edit to modify inline.</div>
+      </div>
+    </div>
+
+    <!-- Dual-view SectionBlock: EDITING -->
+    <div class="card editing" id="editCard" hidden>
+      <div class="card-head">
+        <i class="fas fa-info-circle"></i><strong>Details & descriptions</strong>
+        <span class="badge badge-edit">Editing</span>
+        <span style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-outline" style="padding:6px 12px" onclick="toggleEdit(false)">Cancel</button>
+          <button class="btn btn-primary" style="padding:6px 12px" onclick="toast('✓ Changes saved — preview updated');toggleEdit(false)"><i class="fas fa-check"></i> Save</button>
+        </span>
+      </div>
+      <div class="two">
+        <div class="field"><label>Tagline</label><input value="Corporate Document Management"></div>
+        <div class="field"><label>Title (feature row)</label><input value="Gozmar DMS"></div>
+      </div>
+      <div class="field"><label>CTA button label</label><input value="Discover DMS"></div>
+      <div class="field"><label>Summary (feature row)</label><textarea rows="3">An AI-powered document management system that organises, secures, and retrieves your corporate files with zero friction…</textarea></div>
+      <div class="field"><label>Detail intro</label><textarea rows="2">Gozmar DMS turns the chaos of corporate files into a calm, searchable, secure system of record…</textarea></div>
+      <div style="margin-top:8px;background:#e6f1ff;border:1px solid #b5d3ff;border-radius:10px;padding:8px 10px;font-size:.82rem;color:#00408a"><i class="fas fa-circle-info"></i> Inline Editing Mode — fields sit directly next to content they modify (Component Closeness). Blue ring = editing. Saving shows spinner + toast.</div>
+    </div>
+
+    <!-- Visual Media Hub -->
+    <div class="card">
+      <div class="card-head"><i class="fas fa-images"></i><strong>Visual Media Hub</strong> <span class="badge badge-view">Drag & drop</span></div>
+      <div class="row">
+        <div class="field" style="margin:0"><label>Hero image URL</label><input id="heroUrl" type="url" placeholder="https://... or drop image here" value="" oninput="updateThumb(this.value)"><div style="font-size:.76rem;color:#86868b;margin-top:4px">Drag & drop, paste URL, or click Upload — preview updates instantly</div></div>
+        <div id="thumb" class="thumb">Preview</div>
+      </div>
+      <div class="field"><label>Alt text</label><input placeholder="Describe the image for SEO and accessibility — e.g. Team reviewing Gozmar DMS dashboard"></div>
+      <div id="drop" class="drop" style="margin-top:10px" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="onDrop(event)"><i class="fas fa-cloud-arrow-up"></i> Drag & drop image here or <label style="color:#0071e3;cursor:pointer;text-decoration:underline">Upload <input type="file" accept="image/*" hidden onchange="onFile(this.files[0])"></label> — asset preview + alt-text config</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+        <div class="field" style="margin:0"><label>Gallery 1 URL</label><input type="url" placeholder="https://..."><div class="thumb" style="margin-top:8px;width:100%">Preview</div></div>
+        <div class="field" style="margin:0"><label>Gallery 2 URL</label><input type="url" placeholder="https://..."><div class="thumb" style="margin-top:8px;width:100%">Preview</div></div>
+        <div class="field" style="margin:0"><label>Gallery 3 URL</label><input type="url" placeholder="https://..."><div class="thumb" style="margin-top:8px;width:100%">Preview</div></div>
+      </div>
+    </div>
+
+    <!-- Connected Pricing Cards -->
+    <div class="card">
+      <div class="card-head"><i class="fas fa-tags"></i><strong>Pricing</strong> <span class="badge badge-view">Tiered</span></div>
+      <div style="background:#fff8e6;border:1px solid #ffd60a;border-radius:14px;padding:14px;margin-bottom:12px">
+        <strong style="font-size:.9rem"><i class="fas fa-bolt"></i> Quick price correction</strong>
+        <div style="font-size:.78rem;color:#6e6e73;margin-bottom:10px">Update any tier’s monthly price instantly — preview reflects changes in real-time.</div>
+        <div class="two" style="grid-template-columns:repeat(3,1fr)">
+          <div class="field" style="margin:0"><label>Starter — Monthly</label><input value="$—"></div>
+          <div class="field" style="margin:0"><label>Pro — Monthly</label><input value="$29"></div>
+          <div class="field" style="margin:0"><label>Enterprise — Monthly</label><input value="Custom"></div>
+        </div>
+      </div>
+      <div class="tier featured">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>Pro <span style="font-weight:400;color:#86868b">Tier 2</span></strong><span class="badge badge-edit">Featured</span></div>
+        <div class="two"><div class="field" style="margin:0"><label>Tier name</label><input value="Pro"></div><div class="field" style="margin:0"><label>Monthly</label><input value="$29"></div></div>
+        <div class="two"><div class="field" style="margin:0"><label>Annual</label><input value="$290"></div><div class="field" style="margin:0"><label>Volume discount %</label><input value="15"></div></div>
+        <div class="field"><label>Features</label><div style="display:flex;gap:8px;margin-bottom:6px"><input value="Up to 50 users" style="flex:1"><button style="width:36px;height:36px;border-radius:8px;border:1px solid #d2d2d7;background:#fff;color:#d70015">✕</button></div><div style="display:flex;gap:8px;margin-bottom:6px"><input value="1 TB storage" style="flex:1"><button style="width:36px;height:36px;border-radius:8px;border:1px solid #d2d2d7;background:#fff;color:#d70015">✕</button></div><button class="btn btn-outline" style="border-style:dashed;border-color:#0071e3;color:#0071e3;background:#e6f1ff">+ Add feature</button></div>
+      </div>
+      <div class="tier"><strong>Starter <span style="font-weight:400;color:#86868b">Tier 1</span></strong><div style="font-size:.78rem;color:#6e6e73;margin-top:4px">Connected — linked to pricing display; changing here updates the card instantly.</div></div>
+    </div>
+
+    <!-- Product Update Workflow — Wizard -->
+    <div class="card">
+      <div class="card-head"><i class="fas fa-wand-magic-sparkles"></i><strong>Product Update Workflow</strong> <span class="badge badge-view">Wizard</span></div>
+      <div class="wizard-steps">
+        <span class="step active"><span style="width:18px;height:18px;border-radius:50%;background:#fff;color:#0071e3;display:grid;place-items:center;font-size:.7rem">1</span> Basics</span>
+        <span style="color:#d2d2d7">—</span><span class="step">2 Media & Features</span>
+        <span style="color:#d2d2d7">—</span><span class="step">3 Pricing & Relations</span>
+        <span style="color:#d2d2d7">—</span><span class="step">4 Preview & Publish</span>
+      </div>
+      <div style="margin-top:12px;display:grid;gap:10px">
+        <div class="field"><label>New product name</label><input placeholder="e.g. Gozmar Analytics"></div>
+        <div class="field"><label>Description</label><textarea rows="2" placeholder="What does this product do?"></textarea></div>
+        <div class="field"><label>Link to category / pricing table</label><select><option>— Select category —</option><option>Corporate (DMS)</option><option>Family</option><option>Logistics (Freight)</option><option>Productivity (Mylife/Task)</option></select><div style="font-size:.76rem;color:#86868b;margin-top:4px">Relationship Mapping — simple dropdown to link new product to existing category or pricing table.</div></div>
+        <div class="two"><div class="field" style="margin:0"><label>Price (monthly)</label><input placeholder="$29"></div><div class="field" style="margin:0"><label>Image</label><input type="url" placeholder="https://..."></div></div>
+      </div>
+      <div style="margin-top:12px;background:#fff8e6;border:1px solid #ffd60a;border-radius:10px;padding:10px;font-size:.82rem"><i class="fas fa-flask"></i> <strong>Draft & Preview:</strong> Toggle <em>Draft</em> to view changes in staging (preview pane / iframe) before hitting <strong>Publish Live</strong>. No live breaks.</div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px"><button class="btn btn-outline" disabled>Back</button><button class="btn btn-primary" onclick="toast('Wizard: Next → Media & Features')">Next →</button></div>
+    </div>
+
+    <div style="background:#1d1d1f;color:#fff;border-radius:16px;padding:16px;margin-top:8px">
+      <div style="font-weight:700;margin-bottom:6px"><i class="fas fa-folder-tree"></i> Clean Folder Structure — <code>src/</code></div>
+      <pre style="margin:0;white-space:pre-wrap;font-size:.76rem;line-height:1.6;opacity:.92">src/
+├── app/admin/products/[key]/page.tsx   # dynamic product editor
+├── components/ui/Button, Input, Card, Toast, Alert
+├── components/layout/Topbar, Sidebar, PreviewPane
+├── components/cms/MediaHub, InlineEditToggle
+├── features/sections/SectionBlock (dual-view)
+├── features/products/ProductWizard (4 steps + validation)
+├── features/pricing/PricingEditor, TierCard
+├── features/draft/PublishBar (Draft ↔ Preview → Publish Live)
+├── services/cms.ts + pocketbase.ts (swappable backend)
+├── stores/cmsStore, draftStore (Zustand)
+├── hooks/useSection, useDirty, usePreview, useMediaUpload
+├── utils/image, validation, cn
+├── types/cms.ts  &  lib/config.ts
+└── See CMS_ARCHITECTURE.md for full plan</pre>
+    </div>
+
+    <div style="margin-top:12px;font-size:.78rem;color:#86868b">Wireframes are interactive previews. Production dashboard scaffold lives in <code>src/</code> — open <code>CMS_ARCHITECTURE.md</code> for the full spec and wiring.</div>
+  </main>
+
+  <aside class="preview">
+    <div class="preview-head">Live preview — instant feedback</div>
+    <div style="padding:14px">
+      <div class="card" style="margin:0">
+        <div style="font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:#86868b">Corporate Document Management — Gozmar DMS</div>
+        <h3 style="margin:6px 0 8px">Gozmar DMS</h3>
+        <p style="font-size:.86rem;color:#6e6e73;margin:0">An AI-powered document management system that organises, secures, and retrieves your corporate files…</p>
+        <ul style="font-size:.84rem;margin:12px 0 0;padding-left:18px"><li>AI-driven auto-tagging</li><li>Enterprise-grade encryption</li><li>Full-text search</li></ul>
+        <div style="display:grid;gap:8px;margin-top:12px">
+          <div style="border:1px solid #d2d2d7;border-radius:12px;padding:10px"><strong style="font-size:.84rem">Starter</strong><div style="color:#0071e3;font-weight:700">$—</div></div>
+          <div style="border:1px solid #0071e3;box-shadow:0 4px 14px rgba(0,113,227,.12);border-radius:12px;padding:10px"><strong style="font-size:.84rem">Pro</strong><div style="color:#0071e3;font-weight:700">$— <span style="font-weight:400;font-size:.76rem">/mo</span></div><div style="font-size:.72rem;color:#86868b">15% volume discount (min 10 seats)</div></div>
+          <div style="border:1px solid #d2d2d7;border-radius:12px;padding:10px"><strong style="font-size:.84rem">Enterprise</strong><div style="font-weight:700">Custom</div></div>
+        </div>
+        <div style="margin-top:10px;font-size:.74rem;color:#86868b"><i class="fas fa-bolt"></i> Instant: pricing edits reflect here in real-time.</div>
+      </div>
+      <div style="margin-top:12px;background:#e6f5ec;border:1px solid #b7e5c7;border-radius:12px;padding:10px;font-size:.82rem;color:#0a5a2a"><i class="fas fa-check-circle"></i> Success — changes staged. Toggle Draft → Preview before Publish Live.</div>
+      <div style="margin-top:8px;background:#fff0f0;border:1px solid #f5b5b5;border-radius:12px;padding:10px;font-size:.82rem;color:#8a0010;display:none" id="err"><i class="fas fa-triangle-exclamation"></i> Error state example — shown on validation / save failure.</div>
+      <div style="margin-top:8px;font-size:.76rem;color:#86868b"><i class="fas fa-spinner fa-spin"></i> Loading spinner shown on Save / Publish buttons when saving.</div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast" class="toast">Saved</div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function toggleEdit(on){
+  document.getElementById('viewCard').hidden=on;
+  document.getElementById('editCard').hidden=!on;
+  if(on) toast('Editing mode — blue ring + amber badge');
+}
+function updateThumb(v){
+  const th=document.getElementById('thumb');
+  if(v){th.style.backgroundImage='url("'+v.replace(/"/g,'&quot;')+'")';th.textContent=''} else {th.style.backgroundImage='';th.textContent='Preview'}
+}
+function onDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('drag');
+  const f=e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(f){const url=URL.createObjectURL(f);document.getElementById('heroUrl').value=url;updateThumb(url);toast('✓ Image dropped — preview updated')}
+  else{const url=e.dataTransfer.getData('text/plain');if(url){document.getElementById('heroUrl').value=url;updateThumb(url)}}
+}
+function onFile(f){if(!f)return;const url=URL.createObjectURL(f);document.getElementById('heroUrl').value=url;updateThumb(url);toast('✓ Image selected')}
+</script>
+</body>
+</html>

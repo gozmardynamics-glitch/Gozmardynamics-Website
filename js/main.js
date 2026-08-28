@@ -360,4 +360,57 @@
     if (window.GOZMAR_PRODUCTS) {
         hydrateProducts(window.GOZMAR_PRODUCTS);
     }
+
+    /* ---------- Audience slideshow (auto-advances every 7s) ---------- */
+    var audienceStage = document.getElementById('audienceStage');
+    if (audienceStage) {
+        var slides = audienceStage.querySelectorAll('.audience-slide');
+        var dotsWrap = document.getElementById('audDots');
+        var prevBtn = document.getElementById('audPrev');
+        var nextBtn = document.getElementById('audNext');
+        var current = 0;
+        var timer = null;
+        var INTERVAL = 7000; // 7s per the brief
+
+        // build dots
+        var dots = [];
+        slides.forEach(function (slide, i) {
+            var dot = document.createElement('button');
+            dot.className = 'aud-dot' + (i === 0 ? ' is-active' : '');
+            dot.setAttribute('role', 'tab');
+            dot.setAttribute('aria-label', 'Slide ' + (i + 1) + ' of ' + slides.length);
+            dot.addEventListener('click', function () { goTo(i); restart(); });
+            dotsWrap.appendChild(dot);
+            dots.push(dot);
+        });
+
+        function goTo(index) {
+            if (index === current) return;
+            slides[current].classList.remove('is-active');
+            dots[current].classList.remove('is-active');
+            current = (index + slides.length) % slides.length;
+            slides[current].classList.add('is-active');
+            dots[current].classList.add('is-active');
+        }
+
+        function restart() {
+            if (timer) clearInterval(timer);
+            if (prefersReducedMotion) return;
+            timer = setInterval(function () { goTo(current + 1); }, INTERVAL);
+        }
+
+        if (prevBtn && nextBtn) {
+            prevBtn.addEventListener('click', function () { goTo(current - 1); restart(); });
+            nextBtn.addEventListener('click', function () { goTo(current + 1); restart(); });
+        }
+
+        // Pause auto-advance while the visitor is interacting with the stage
+        audienceStage.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
+        audienceStage.addEventListener('mouseleave', restart);
+        audienceStage.addEventListener('focusin', function () { if (timer) clearInterval(timer); });
+        audienceStage.addEventListener('focusout', restart);
+
+        // Slide if the invisible-until-visible? No — always autoplay (reduced motion respects the setting).
+        restart();
+    }
 })();

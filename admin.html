@@ -30,7 +30,7 @@
         <div class="auth-card">
             <div class="admin-brand auth-brand"><i class="fas fa-lock"></i> Gozmar <span>CMS</span></div>
             <h1 id="authTitle">Admin sign in</h1>
-            <p>Sign in with your Supabase admin account to manage published content.</p>
+            <p>Sign in with your PocketBase admin account to manage published content. Leave empty PocketBase URL in <code>js/cms-config.js</code> for local-only mode.</p>
             <form id="loginForm" novalidate>
                 <div class="field">
                     <label for="loginEmail">Email</label>
@@ -49,10 +49,44 @@
     <div id="adminLayout" class="admin-layout" hidden>
         <nav class="admin-sidebar" id="tabs" aria-label="Content sections"></nav>
         <main class="admin-main">
+            <!-- Draft & Preview bar (Staging → Publish Live safety) -->
+            <div id="draftBar" class="draft-bar" hidden>
+                <label class="draft-toggle"><input type="checkbox" id="draftToggle"> <span>Draft mode</span> <span id="draftBadge" class="badge badge-draft" hidden>Draft — not live</span></label>
+                <span class="draft-hint">Preview staging before Publish Live</span>
+                <button id="btnPreviewStaging" class="btn btn-outline btn-sm">Preview staging</button>
+                <button id="btnPublishLive" class="btn btn-primary btn-sm">Publish Live</button>
+            </div>
+            <!-- New product wizard trigger -->
+            <div class="wizard-trigger">
+                <button id="btnNewProduct" class="btn btn-outline btn-sm"><i class="fas fa-plus"></i> New product (wizard)</button>
+                <span class="hint">Guided 4-step rollout: Basics → Media → Pricing → Preview & Publish</span>
+            </div>
             <div id="adminRoot" class="admin-form"></div>
+            <!-- Wizard modal -->
+            <div id="wizardModal" class="wizard-modal" hidden role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+                <div class="wizard-card">
+                    <div class="wizard-head">
+                        <h2 id="wizardTitle"><i class="fas fa-wand-magic-sparkles"></i> New Product — Step <span id="wizStepNum">1</span> of 4</h2>
+                        <button id="wizClose" class="icon-btn" aria-label="Close">✕</button>
+                    </div>
+                    <div class="wizard-steps">
+                        <span class="wiz-step active" data-s="1">1 Basics</span><span class="wiz-sep">—</span>
+                        <span class="wiz-step" data-s="2">2 Media & Features</span><span class="wiz-sep">—</span>
+                        <span class="wiz-step" data-s="3">3 Pricing & Relations</span><span class="wiz-sep">—</span>
+                        <span class="wiz-step" data-s="4">4 Preview & Publish</span>
+                    </div>
+                    <div id="wizBody" class="wizard-body"></div>
+                    <div class="wizard-foot">
+                        <button id="wizBack" class="btn btn-outline btn-sm" disabled>Back</button>
+                        <span style="flex:1"></span>
+                        <button id="wizNext" class="btn btn-primary btn-sm">Next →</button>
+                        <button id="wizCreate" class="btn btn-primary btn-sm" hidden>Create product</button>
+                    </div>
+                </div>
+            </div>
         </main>
         <aside class="admin-preview">
-            <div class="preview-head">Live preview</div>
+            <div class="preview-head">Live preview <span id="previewMode" class="preview-mode">— live</span></div>
             <div id="preview" class="preview-body"></div>
         </aside>
     </div>

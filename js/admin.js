@@ -70,19 +70,78 @@
         return wrap;
     }
     function imageField(label, path) {
-        var wrap = el('div', { class: 'field' });
-        wrap.appendChild(el('label', {}, label));
+        var wrap = el('div', { class: 'field media-hub' });
+        wrap.appendChild(el('label', {}, label + ' — Visual Media Hub'));
         var row = el('div', { class: 'image-row' });
         var inp = el('input', { type: 'url', value: getPath(path) || '' });
+        inp.placeholder = 'https://... or drop image here';
         var thumb = el('div', { class: 'thumb' }, 'Preview');
+        var altWrap = el('div', { class: 'field alt-field' });
+        altWrap.appendChild(el('label', {}, 'Alt text'));
+        var altInp = el('input', { type: 'text', value: '' });
+        altInp.placeholder = 'Describe image for SEO & accessibility';
+        // try to restore alt from media.altTexts if available
+        try {
+            var parts = path.split('.');
+            if (parts[0] === 'products' && state.products[parts[1]] && state.products[parts[1]].media.altTexts) {
+                altInp.value = state.products[parts[1]].media.altTexts[path] || '';
+            }
+        } catch (e) {}
+        altInp.addEventListener('input', function () {
+            try {
+                var p = path.split('.');
+                if (p[0] === 'products') {
+                    var prod = state.products[p[1]];
+                    prod.media.altTexts = prod.media.altTexts || {};
+                    prod.media.altTexts[path] = altInp.value;
+                    touch();
+                }
+            } catch (e) {}
+        });
         function upd() {
             var v = inp.value.trim();
             thumb.style.backgroundImage = v ? 'url("' + v + '")' : '';
             thumb.textContent = v ? '' : 'Preview';
         }
+        // drag-and-drop + asset preview
+        function onDragOver(e) { e.preventDefault(); wrap.classList.add('drag-over'); thumb.classList.add('drag-over'); }
+        function onDragLeave() { wrap.classList.remove('drag-over'); thumb.classList.remove('drag-over'); }
+        function onDrop(e) {
+            e.preventDefault(); onDragLeave();
+            var file = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) {
+                var url = URL.createObjectURL(file);
+                inp.value = url; setPath(path, url); upd();
+                toast('Image dropped — preview updated');
+                return;
+            }
+            var url2 = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list');
+            if (url2) { inp.value = url2.trim(); setPath(path, url2.trim()); upd(); }
+        }
+        wrap.addEventListener('dragover', onDragOver);
+        wrap.addEventListener('dragleave', onDragLeave);
+        wrap.addEventListener('drop', onDrop);
+        thumb.addEventListener('dragover', onDragOver);
+        thumb.addEventListener('dragleave', onDragLeave);
+        thumb.addEventListener('drop', onDrop);
+        // upload button (physically next to content — Component Closeness)
+        var uploadRow = el('div', { class: 'hint' });
+        var uploadLabel = el('label', { class: 'add-btn' }, 'Upload');
+        var fileInp = el('input', { type: 'file' });
+        fileInp.accept = 'image/*'; fileInp.hidden = true;
+        fileInp.addEventListener('change', function () {
+            var f = fileInp.files[0]; if (!f) return;
+            var u = URL.createObjectURL(f); inp.value = u; setPath(path, u); upd(); toast('Image selected — preview updated');
+        });
+        uploadLabel.appendChild(fileInp);
+        uploadLabel.addEventListener('click', function (e) { e.preventDefault(); fileInp.click(); });
+        var hint = el('span', { class: 'hint' }, ' Drag & drop, paste URL, or Upload — preview + alt-text next to content');
+        uploadRow.appendChild(uploadLabel); uploadRow.appendChild(hint);
         inp.addEventListener('input', function () { setPath(path, inp.value); upd(); });
         upd();
         row.appendChild(inp); row.appendChild(thumb); wrap.appendChild(row);
+        wrap.appendChild(altWrap); altWrap.appendChild(altInp);
+        wrap.appendChild(uploadRow);
         return wrap;
     }
 
@@ -413,8 +472,185 @@
         toast('Content saves directly to PocketBase — no publish step needed.');
     });
 
-    /* unsaved-changes guard */
-    window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+    /* ---------- draft & preview (staging → Publish Live) ---------- */
+    var isDraft = false;
+    var publishedSnapshot = null;
+    function updateDraftUI() {
+        var bar = document.getElementById('draftBar');
+        var badge = document.getElementById('draftBadge');
+        var mode = document.getElementById('previewMode');
+        if (bar) bar.hidden = false;
+        if (badge) badge.hidden = !isDraft;
+        if (mode) mode.textContent = isDraft ? '— draft (staging)' : '— live';
+        var btnPub = document.getElementById('btnPublishLive');
+        if (btnPub) btnPub.textContent = isDraft ? 'Publish Live' : 'Published';
+        if (btnPub) btnPub.disabled = !isDraft;
+    }
+    function enterDraft() {
+        if (!isDraft) {
+            publishedSnapshot = JSON.parse(JSON.stringify(state));
+            isDraft = true; updateDraftUI(); toast('Draft mode — edits are staged. Preview then Publish Live.');
+        }
+    }
+    // auto-enter draft on first edit
+    var _origMarkDirty = markDirty;
+    markDirty = function () {
+        if (!isDraft && dirty === false && publishedSnapshot === null) {
+            // first edit enters draft implicitly if user has toggled draft on
+            var tg = document.getElementById('draftToggle');
+            if (tg && tg.checked) enterDraft();
+        }
+        dirty = true;
+        var f = document.getElementById('dirtyFlag');
+        if (f) f.hidden = false;
+        updatePreview();
+    };
+
+    /* ---------- wizard (4-step product rollout) ---------- */
+    var wizStep = 1;
+    var wizData = null;
+    function openWizard() {
+        wizStep = 1;
+        wizData = {
+            key: '',
+            product: JSON.parse(JSON.stringify(state.products.dms))
+        };
+        // reset to blank template
+        wizData.product.navLabel = '';
+        wizData.product.title = '';
+        wizData.product.tagline = '';
+        wizData.product.summary = '';
+        wizData.product.detailTitle = '';
+        wizData.product.detailIntro = '';
+        wizData.product.detailHeading = '';
+        wizData.product.detailParagraphs = ['', ''];
+        wizData.product.features = [''];
+        wizData.product.media = { hero: '', gallery: ['', '', ''], altTexts: {} };
+        wizData.product.pricing = JSON.parse(JSON.stringify(state.products.dms.pricing));
+        wizData.product.pricing.tiers.forEach(function (t) { t.features = ['']; });
+        wizData.product.categoryId = '';
+        document.getElementById('wizardModal').hidden = false;
+        renderWizard();
+    }
+    function closeWizard() { document.getElementById('wizardModal').hidden = true; wizData = null; }
+    function renderWizard() {
+        document.getElementById('wizStepNum').textContent = String(wizStep);
+        document.querySelectorAll('.wiz-step').forEach(function (el) {
+            var s = parseInt(el.getAttribute('data-s'), 10);
+            el.classList.toggle('active', s === wizStep);
+            el.classList.toggle('done', s < wizStep);
+        });
+        document.getElementById('wizBack').disabled = wizStep === 1;
+        document.getElementById('wizNext').hidden = wizStep === 4;
+        document.getElementById('wizCreate').hidden = wizStep !== 4;
+        var body = document.getElementById('wizBody');
+        body.innerHTML = '';
+        if (!wizData) return;
+        var p = wizData.product;
+        if (wizStep === 1) {
+            body.appendChild(boundTextWizard('Product key (slug, e.g. analytics)', function () { return wizData.key; }, function (v) { wizData.key = v.toLowerCase().replace(/[^a-z0-9-]/g, '-'); }));
+            body.appendChild(boundTextWizard('Product name (title)', function () { return p.title; }, function (v) { p.title = v; p.navLabel = v; }));
+            body.appendChild(boundTextWizard('Tagline', function () { return p.tagline; }, function (v) { p.tagline = v; }));
+            body.appendChild(boundTextareaWizard('Summary (feature row)', function () { return p.summary; }, function (v) { p.summary = v; }));
+            body.appendChild(boundTextareaWizard('Detail intro', function () { return p.detailIntro; }, function (v) { p.detailIntro = v; }));
+            body.appendChild(el('div', { class: 'hint' }, 'Step 1 of 4 — Basics: name, tagline, summary. Next adds media.'));
+        } else if (wizStep === 2) {
+            var heroWrap = el('div', { class: 'field' });
+            heroWrap.appendChild(el('label', {}, 'Hero image URL'));
+            var heroInp = el('input', { type: 'url', value: p.media.hero });
+            heroInp.placeholder = 'https://... or drop';
+            var heroThumb = el('div', { class: 'thumb' }, p.media.hero ? '' : 'Preview');
+            if (p.media.hero) heroThumb.style.backgroundImage = 'url("' + p.media.hero + '")';
+            heroInp.addEventListener('input', function () { p.media.hero = heroInp.value; heroThumb.style.backgroundImage = p.media.hero ? 'url("' + p.media.hero + '")' : ''; heroThumb.textContent = p.media.hero ? '' : 'Preview'; });
+            heroWrap.appendChild(heroInp); heroWrap.appendChild(heroThumb);
+            body.appendChild(heroWrap);
+            [0,1,2].forEach(function (i) {
+                var w = el('div', { class: 'field' });
+                w.appendChild(el('label', {}, 'Gallery ' + (i+1) + ' URL'));
+                var inp = el('input', { type: 'url', value: p.media.gallery[i] || '' });
+                inp.addEventListener('input', function () { p.media.gallery[i] = inp.value; });
+                w.appendChild(inp); body.appendChild(w);
+            });
+            var fWrap = el('div', { class: 'field' });
+            fWrap.appendChild(el('label', {}, 'Features'));
+            var fEditor = el('div', { class: 'list-editor' });
+            function rebuildF() {
+                fEditor.innerHTML = '';
+                p.features.forEach(function (item, idx) {
+                    var row = el('div', { class: 'list-item' });
+                    var inp = el('input', { type: 'text', value: item });
+                    inp.addEventListener('input', function () { p.features[idx] = inp.value; });
+                    var del = el('button', { class: 'icon-btn', title: 'Remove' }, '✕');
+                    del.addEventListener('click', function () { p.features.splice(idx,1); rebuildF(); });
+                    row.appendChild(inp); row.appendChild(del); fEditor.appendChild(row);
+                });
+                var add = el('button', { class: 'add-btn' }, '+ Add feature');
+                add.addEventListener('click', function () { p.features.push(''); rebuildF(); });
+                fEditor.appendChild(add);
+            }
+            rebuildF(); fWrap.appendChild(fEditor); body.appendChild(fWrap);
+        } else if (wizStep === 3) {
+            var catWrap = el('div', { class: 'field' });
+            catWrap.appendChild(el('label', {}, 'Link to category / pricing table (Relationship Mapping)'));
+            var sel = el('select', {});
+            var opts = [{ id: '', label: '— No category —' }].concat(Object.keys(state.products).map(function (k) { return { id: k, label: state.products[k].navLabel }; }));
+            opts.forEach(function (o) {
+                var op = el('option', { value: o.id }, o.label);
+                if (o.id === p.categoryId) op.selected = true;
+                sel.appendChild(op);
+            });
+            sel.addEventListener('change', function () { p.categoryId = sel.value; });
+            catWrap.appendChild(sel);
+            catWrap.appendChild(el('div', { class: 'hint' }, 'Simple dropdown to link new product to existing category or pricing table.'));
+            body.appendChild(catWrap);
+            // pricing tiers quick
+            p.pricing.tiers.forEach(function (t, i) {
+                var card = el('div', { class: 'tier-card' + (i===1 ? ' featured' : '') });
+                card.appendChild(el('h3', {}, t.name + ' — Tier ' + (i+1)));
+                var g = el('div', { class: 'two-col' });
+                g.appendChild(boundTextWizard('Tier name', function(){return t.name}, function(v){t.name=v}));
+                g.appendChild(boundTextWizard('Monthly', function(){return t.monthly}, function(v){t.monthly=v}));
+                g.appendChild(boundTextWizard('Annual', function(){return t.annual}, function(v){t.annual=v}));
+                g.appendChild(boundTextWizard('CTA', function(){return t.cta}, function(v){t.cta=v}));
+                card.appendChild(g);
+                body.appendChild(card);
+            });
+        } else if (wizStep === 4) {
+            body.appendChild(el('div', { class: 'hint' }, 'Draft & Preview: review staged product below. Toggle Draft then Publish Live to go live.'));
+            var preview = el('div', { class: 'preview-card' });
+            preview.appendChild(el('h3', {}, (p.tagline || 'Tagline') + ' — ' + (p.title || 'Untitled')));
+            preview.appendChild(el('p', {}, p.summary || 'No summary yet.'));
+            var ul = el('ul', { class: 'product-features' });
+            (p.features || []).forEach(function (f) { if (f) ul.appendChild(el('li', {}, f)); });
+            preview.appendChild(ul);
+            var priceGrid = el('div', { class: 'price-grid' });
+            p.pricing.tiers.forEach(function (t) {
+                var tier = el('div', { class: 'price-tier' });
+                tier.appendChild(el('h4', {}, t.name));
+                tier.appendChild(el('p', { class: 'price' }, t.monthly));
+                priceGrid.appendChild(tier);
+            });
+            preview.appendChild(priceGrid);
+            body.appendChild(preview);
+            if (!wizData.key || !p.title) {
+                body.appendChild(el('div', { class: 'hint', style: 'color:#d70015' }, 'Enter product key and title before creating.'));
+            }
+        }
+    }
+    function boundTextWizard(label, getv, setv) {
+        var w = el('div', { class: 'field' });
+        w.appendChild(el('label', {}, label));
+        var inp = el('input', { type: 'text', value: getv() || '' });
+        inp.addEventListener('input', function(){ setv(inp.value); });
+        w.appendChild(inp); return w;
+    }
+    function boundTextareaWizard(label, getv, setv) {
+        var w = el('div', { class: 'field' });
+        w.appendChild(el('label', {}, label));
+        var ta = el('textarea', {}); ta.value = getv() || '';
+        ta.addEventListener('input', function(){ setv(ta.value); });
+        w.appendChild(ta); return w;
+    }
 
     function showDashboard() {
         var gate = document.getElementById('authGate');
@@ -426,6 +662,7 @@
 
         buildTabs();
         render();
+        updateDraftUI();
         CMS.refreshState().then(function (s) { if (s) { state = s; render(); } });
     }
 
@@ -473,6 +710,64 @@
             showLogin();
         });
     });
+
+    // Draft bar wiring
+    var draftToggle = document.getElementById('draftToggle');
+    if (draftToggle) draftToggle.addEventListener('change', function () {
+        if (draftToggle.checked) enterDraft();
+        else {
+            if (isDraft && publishedSnapshot) {
+                if (dirty && !confirm('Discard staged draft and revert to published?')) { draftToggle.checked = true; return; }
+                state = JSON.parse(JSON.stringify(publishedSnapshot));
+                isDraft = false; dirty = false;
+                var f = document.getElementById('dirtyFlag'); if (f) f.hidden = true;
+                buildTabs(); render(); updateDraftUI(); toast('Reverted to published');
+            } else { isDraft = false; updateDraftUI(); }
+        }
+    });
+    var btnPreviewStaging = document.getElementById('btnPreviewStaging');
+    if (btnPreviewStaging) btnPreviewStaging.addEventListener('click', function () {
+        updatePreview();
+        toast('Staging preview updated — check Live preview pane');
+        document.querySelector('.admin-preview')?.scrollIntoView({ behavior: 'smooth' });
+    });
+    var btnPublishLive = document.getElementById('btnPublishLive');
+    if (btnPublishLive) btnPublishLive.addEventListener('click', function () {
+        if (!isDraft) { toast('Nothing to publish — enable Draft mode first'); return; }
+        CMS.saveState(state).then(function (ok) {
+            if (ok) {
+                publishedSnapshot = JSON.parse(JSON.stringify(state));
+                isDraft = false; dirty = false;
+                var f = document.getElementById('dirtyFlag'); if (f) f.hidden = true;
+                var tg = document.getElementById('draftToggle'); if (tg) tg.checked = false;
+                updateDraftUI(); toast('✓ Published live');
+            } else toast('Publish failed');
+        });
+    });
+
+    // Wizard wiring
+    var btnNew = document.getElementById('btnNewProduct');
+    if (btnNew) btnNew.addEventListener('click', openWizard);
+    var wizClose = document.getElementById('wizClose');
+    if (wizClose) wizClose.addEventListener('click', closeWizard);
+    var wizBack = document.getElementById('wizBack');
+    if (wizBack) wizBack.addEventListener('click', function(){ if (wizStep>1){ wizStep--; renderWizard(); }});
+    var wizNext = document.getElementById('wizNext');
+    if (wizNext) wizNext.addEventListener('click', function(){ if (wizStep<4){ wizStep++; renderWizard(); }});
+    var wizCreate = document.getElementById('wizCreate');
+    if (wizCreate) wizCreate.addEventListener('click', function(){
+        if (!wizData.key) { toast('Enter product key'); return; }
+        if (state.products[wizData.key]) { toast('Key already exists: ' + wizData.key); return; }
+        if (!wizData.product.title) { toast('Enter product title'); return; }
+        state.products[wizData.key] = wizData.product;
+        CMS.saveState(state).then(function(){
+            buildTabs(); currentPath = 'products.' + wizData.key; render();
+            toast('✓ Product created: ' + wizData.key);
+            closeWizard();
+        });
+    });
+    var wizardModal = document.getElementById('wizardModal');
+    if (wizardModal) wizardModal.addEventListener('click', function(e){ if (e.target === wizardModal) closeWizard(); });
 
     /* boot: authenticate before exposing the CMS when PocketBase is configured */
     if (authRequired) {

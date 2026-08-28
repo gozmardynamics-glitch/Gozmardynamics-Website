@@ -45,7 +45,8 @@ Single page, anchor-navigated. Section order and `id`s:
 | 2 | Stats band | `stats` | 4 social-proof numbers |
 | 3 | About | `about` | Two-column: image + text |
 | 4 | Products (6 blocks) | `products` | Alternating image/text |
-| 5 | Why Choose Us / Values | `values` | 4 cards, dark section |
+| 5 | Audience slideshow | `audiences` | Auto-sliding carousel (7s): image left, copy + floating chips right, blurred backdrop |
+| 6 | Why Choose Us / Values | `values` | 4 cards, dark section |
 | 6 | Testimonials | `testimonials` | 3 quote cards |
 | 7 | Contact | `contact` | Form + contact info |
 | 8 | Footer | — | Links, legal, social, newsletter |
