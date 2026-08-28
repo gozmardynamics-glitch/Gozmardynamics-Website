@@ -242,30 +242,31 @@ A no-backend, vanilla-JS CMS drives all front-page content so the layout/markup 
 
 ## 14. Deployment: Coolify + PocketBase (self-hosted CMS)
 
-Static site is hosted on **Coolify** from a Docker/Nginx container; content is edited in the admin dashboard and stored in **PocketBase** (self-hosted on Coolify). No GitHub Actions needed — content saves directly to PocketBase.
+> **Full step-by-step deployment guide: see [`DEPLOYMENT.md`](DEPLOYMENT.md)**
 
-- `js/cms-config.js` — PocketBase URL, collection name, Google Analytics ID. Empty = **Local mode** (browser `localStorage` only).
-- `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from PocketBase (admin); `signIn()`/`signOut()` handle PocketBase auth.
-- `admin.html` — authenticated admin login gate, backend mode indicator.
-- `Dockerfile` + `nginx.conf` — serve the static site through Nginx on Coolify.
+Static site is hosted on **Coolify** from a Docker/Nginx container; content is edited in the admin dashboard and stored in **PocketBase** (self-hosted on Coolify). No GitHub Actions needed — content saves directly to PocketBase.
 
 ### Services on Coolify
 | Service | Purpose | Type |
 |---|---|---|
-| Gozmar website | Static site (nginx) | Dockerfile |
+| Gozmar website | Static site (nginx) | Dockerfile (public GitHub repo) |
 | PocketBase | CMS database + auth + API | One-click service |
 | Uptime Kuma | Monitor website uptime | One-click service |
+| Google Analytics | Visitor analytics | External (GA4) |
 
-### Setup checklist
-1. Deploy **PocketBase** on Coolify (one-click service).
-2. In PocketBase admin (`/_/`), create a collection called `cms_content` with a JSON field called `data`.
-3. Set collection rules: list/search = `""` (public), create/update = `"@request.auth.id != ''"`.
-4. Create an admin user in the `users` collection.
-5. Copy the PocketBase URL into `js/cms-config.js`.
-6. In Coolify, create an Application from this GitHub repository, use the Dockerfile, expose port `80`, and enable auto-deploy.
-7. Configure `www.gozmardynamics.com` in Coolify and point DNS to the Coolify server; enable HTTPS.
-8. Deploy **Uptime Kuma** on Coolify and add a monitor for `https://www.gozmardynamics.com`.
-9. Create a Google Analytics property at https://analytics.google.com/ and add the measurement ID to `js/cms-config.js`.
-10. Open `admin.html`, sign in with your PocketBase user, edit content, and click **Save changes**.
+### Architecture
+```
+Visitors → nginx (static site) → reads CMS content from PocketBase API at runtime
+Admin → admin.html → signs in with PocketBase → edits → saves to PocketBase
+GitHub → source control only → auto-deploys via webhook on push
+```
 
-Flow: `Admin → Save → PocketBase (on Coolify)`. Visitors load the static site which reads content from PocketBase's API at runtime. No baking, no redeployment for content changes.
+### Key files
+- `js/cms-config.js` — PocketBase URL, collection name, Google Analytics ID. Empty `pocketbaseUrl` = **Local mode** (browser `localStorage` only).
+- `js/cms.js` — `loadState`/`saveState` keep `localStorage` as offline fallback; `refreshState()` pulls from PocketBase (admin); `signIn()`/`signOut()` handle PocketBase auth.
+- `admin.html` — authenticated admin login gate, backend mode indicator.
+- `Dockerfile` + `nginx.conf` — serve the static site through Nginx on Coolify.
+- `DEPLOYMENT.md` — complete step-by-step setup guide (9 phases, from repo visibility to custom domain).
+
+### Flow
+`Admin → Save → PocketBase (on Coolify)`. Visitors load the static site which reads content from PocketBase's API at runtime. No baking, no redeployment for content changes. Code changes (HTML/CSS/JS) auto-deploy via GitHub webhook.
