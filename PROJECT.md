@@ -194,18 +194,24 @@ Gozmar-Dynamics-Website/
 
 ---
 
-## 11. Roadmap / Backlog (future work)
+## 11. Roadmap / Backlog (updated 2026-08-28 — post scalable CMS)
 
-- [ ] Replace all Unsplash URLs with licensed, on-brand imagery (own product screenshots ideal).
-- [ ] Wire contact form + newsletter to a real backend (Formspree, Resend, Supabase, etc.).
-- [ ] Add a favicon, OG/social meta tags, and JSON-LD structured data for SEO.
-- [ ] Add a product **overview grid** at the top of `#products` for quick navigation to the 6 blocks.
-- [ ] Dark mode toggle (the design system already uses CSS tokens).
-- [ ] FAQ section (accordion) for common product questions.
-- [ ] Per-product detail pages or deeper anchor sub-nav.
-- [ ] Replace Font Awesome CDN with inline SVG for a dependency-free build (optional).
+**Completed in this iteration (§1–6)**
+- [x] **Scalable Multi-Product:** ONE reusable template (`js/cms.js:productTemplateHTML`) — `index.html#productsMount` renders unlimited products from `js/cms-data.js` (no code change for new products).
+- [x] **Backend-driven frontend:** All visible fields now from CMS — name/tagline, `commerce.price|compareAtPrice|badge|stockStatus`, `taxonomy.category|tags`, `specifications[]`, `features|featureCards`, `media.images[]` with `featuredIndex`, `banners`, `pricing.tiers[]`. Optional fields gracefully hidden (`commerceHTML/taxonomyHTML/specsHTML` guards).
+- [x] **Well-labelled Admin:** `js/admin.js:renderProduct` groups into Basic Info / Pricing / Images / Details / Visibility with explicit labels (e.g. “Product Title — frontend H2 & nav”).
+- [x] **Gallery System:** `media.images[]` unlimited + `★ Set Featured` (card thumbnail & hero + slider). `js/cms.js:getFeaturedSrc/getGalleryUrls` + `js/admin.js:galleryImagesEditor` — active for all 6 existing (migrated) and new products. `normalizeProduct()` migrates legacy `hero/gallery`.
+- [x] **Admin UI overhaul:** `css/admin.css` warm aurora gradient topbar, card lift, focus glow, 200ms transitions, toast success/error, spinner on Save, `confirm()` on delete/discard, tab count + draft/archived badges, scrollbar polish.
+- [x] **QA sweep:** Fixed `CMS.getSession` string handling (was `access_token` check), blob URL revoke, wizard `media.images` init, missing `compareAtPrice` display, dead `src/` react scaffold excluded from prod.
+
+**Still pending — do next**
+- [ ] Replace Unsplash placeholders with licensed on-brand imagery (+ real `og-image.png`).
+- [ ] Wire contact form + newsletter to real backend (Formspree/Resend/PocketBase).
 - [ ] Real legal review of Terms & Privacy copy.
-- [ ] Analytics (privacy-respecting, e.g. Plausible/Umami).
+- [ ] Replace Font Awesome CDN with inline SVG (optional, dependency-free).
+- [ ] Add PocketBase image file uploads (currently URL/blob; move to `pb.files` for persistence).
+- [ ] Add product search/filter in admin when >15 products (tabs scroll).
+- [ ] E2E Cypress/Playwright: automate the create→featured→save→view flow (manual E2E verified via `e2e-test.js`).
 
 ---
 
@@ -219,27 +225,29 @@ python -m http.server 8000   # then open http://localhost:8000
 
 ---
 
-## 13. Admin CMS (content management)
+## 13. Admin CMS (content management) — scalable, backend-driven
 
-A no-backend, vanilla-JS CMS drives all front-page content so the layout/markup in `index.html`/`styles.css` stays untouched.
+**Architecture now:** ONE product template, unlimited products, fully editable from admin. No hardcoding.
 
-- `js/cms-data.js` — single source of truth (`GOZMAR_DEFAULTS`): all 6 products + site sections (hero, about, stats, values, testimonials, FAQ, contact, footer).
-- `js/cms.js` — front-end binder; applies the data model to `index.html` via existing selectors; persists to `localStorage` (`gozmar_cms_v1`). Cross-tab live update via `storage` event.
-- `admin.html` + `css/admin.css` + `js/admin.js` — dashboard with one tab per item (6 products + 8 site sections). Each product tab edits: details/descriptions, media (hero + 3 gallery URLs with live thumbnail preview), feature list, and tiered pricing with **quick price correction** + **volume discount %** + **min seats** per tier. Top bar: Save / Reset / Export JSON / Import JSON. Live preview pane.
-- `www.gozmardynamics.com` is wired as canonical, OG, and JSON-LD URL.
+- `js/cms-data.js` — source of truth (`GOZMAR_DEFAULTS`). Each product: `title/navLabel/tagline`, `commerce{price,compareAtPrice,badge,stockStatus}`, `taxonomy{category,tags}`, `specifications[]`, `features|featureCards`, `media{images:[{src,alt,featured}],featuredIndex,hero,gallery,slider}`, `banners`, `pricing.tiers[]`, `status`. `normalizeProduct()` migrates legacy `hero/gallery` → `images[]` so existing `localStorage`/PocketBase data is preserved.
+- `js/cms.js` — `productTemplateHTML(key,product,index)` is the single source (used by every product). Helpers: `getFeaturedSrc()`, `getGalleryUrls()`, `commerceHTML()`, `taxonomyHTML()`, `specsHTML()` hide empty sections. `renderAllProductsDynamic()` mounts into `index.html#productsMount` (backend-driven); fallback patches legacy static articles. `renderSlider()` now reads `media.images[]`; `setMedia()` syncs featured.
+- `admin.html` + `css/admin.css` + `js/admin.js` — Dashboard: tabs show `Products (n)` + draft/archived hints. Per-product editor grouped **Basic Info / Pricing / Images / Details / Visibility** with well-labelled fields (e.g. “Product Title — frontend H2”). Gallery: unlimited images, drag-drop/file upload, `★ Set Featured`, alt text, reorder, confirm on delete. `Duplicate` + `Delete product` (confirm). Top bar: Draft toggle → Preview staging → Publish Live, Save (spinner), Reset/Export/Import with confirm/toast. Live preview pane. Visual overhaul: gradient ink topbar, lift on hover, focus glow, toast variants, pulse on dirty.
+- `www.gozmardynamics.com` wired as canonical/OG/JSON-LD.
 
-**Note:** storage is per-browser `localStorage` (no server). To share content across users/admins, connect to PocketBase (self-hosted on Coolify) — the admin UI and data model already isolate that behind `CMS.saveState`/`loadState`. Add admin auth before exposing `admin.html` publicly.
+**Note:** Empty `pocketbaseUrl` in `js/cms-config.js` = Local mode (`localStorage` only). With PocketBase set, `CMS.saveState` → `pb.files` (image blob URLs currently local; migrate to file upload for persistence).
 
-### Roadmap status (updated)
-- [x] Per-product detail pages / in-page sections
-- [x] Admin CMS with per-item tabs, media, tiered pricing + volume discounts
+### Roadmap status (updated 2026-08-28)
+- [x] Per-product detail pages + scalable single template
+- [x] Admin CMS with grouped labelled sections, gallery featured, commerce/taxonomy/specs, status
 - [x] `www.gozmardynamics.com` wired (canonical/OG/JSON-LD)
+- [x] Backend-driven frontend (every visible element from CMS, optional hide)
+- [x] PocketBase + auth + localStorage fallback
+- [x] Analytics (Google Analytics — configure in `cms-config.js`)
 - [ ] Replace Unsplash placeholders with licensed imagery (+ real `og-image.png`)
-- [ ] Wire contact form + newsletter to a real backend
-- [x] Move CMS storage to a shared backend (PocketBase) + add admin authentication
+- [ ] Wire contact form + newsletter to real backend
 - [ ] Real legal review of Terms & Privacy
-- [x] Analytics (Google Analytics � configure measurement ID in cms-config.js)
 - [ ] Replace Font Awesome CDN with inline SVG (optional)
+- [ ] PocketBase file upload for gallery persistence (currently URL/blob)
 
 ## 14. Deployment: Coolify + PocketBase (self-hosted CMS)
 

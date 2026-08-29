@@ -176,7 +176,7 @@
                 var inp = el('input', { type: 'text', value: item });
                 inp.addEventListener('input', function () { arr[idx] = inp.value; touch(); });
                 var del = el('button', { class: 'icon-btn', title: 'Remove' }, '✕');
-                del.addEventListener('click', function () { arr.splice(idx, 1); touch(); rebuild(); });
+                del.addEventListener('click', function () { if (!confirm('Remove this item?')) return; arr.splice(idx, 1); touch(); rebuild(); });
                 row.appendChild(inp); row.appendChild(del);
                 editor.appendChild(row);
             });
@@ -201,7 +201,7 @@
                     card.appendChild(boundText(fd.label, function () { return item[fd.key]; }, function (v) { item[fd.key] = v; }));
                 });
                 var del = el('button', { class: 'icon-btn', title: 'Remove' }, '✕');
-                del.addEventListener('click', function () { arr.splice(idx, 1); touch(); rebuild(); });
+                del.addEventListener('click', function () { if (!confirm('Remove this item?')) return; arr.splice(idx, 1); touch(); rebuild(); });
                 card.appendChild(del);
                 editor.appendChild(card);
             });
@@ -217,10 +217,175 @@
         return wrap;
     }
 
+    /* ---------- gallery images with featured (scalable, unlimited) ---------- */
+    function galleryImagesEditor(label, product) {
+        var media = product.media = product.media || { images: [], featuredIndex: -1, hero: '', gallery: [], slider: { autoplay: true } };
+        if (!Array.isArray(media.images)) media.images = [];
+        if (typeof media.featuredIndex !== 'number') media.featuredIndex = media.images.length ? 0 : -1;
+        var wrap = el('div', { class: 'field' });
+        wrap.appendChild(el('label', {}, label));
+        wrap.appendChild(el('div', { class: 'hint' }, 'Unlimited images. ★ sets Featured (card thumbnail & hero). Frontend slider shows all.'));
+        var editor = el('div', { class: 'list-editor' });
+        function rebuild() {
+            editor.innerHTML = '';
+            media.images.forEach(function (img, idx) {
+                var row = el('div', { class: 'list-item', html: '' });
+                row.style.alignItems = 'center';
+                var isFeatured = media.featuredIndex === idx;
+                var thumb = el('div', { class: 'thumb' }, isFeatured ? '★ Featured' : 'Preview');
+                if (isFeatured) { thumb.style.borderColor = '#0071e3'; thumb.style.background = '#e6f1ff'; thumb.style.fontWeight = '700'; }
+                var src = img.src || '';
+                if (src) { thumb.style.backgroundImage = 'url(\"' + src.replace(/\"/g, '&quot;') + '\")'; thumb.style.backgroundSize = 'cover'; thumb.style.backgroundPosition = 'center'; thumb.textContent = isFeatured ? '★ Featured' : ''; }
+                var inp = el('input', { type: 'url', value: src, placeholder: 'https://…/image.jpg' });
+                inp.addEventListener('input', function () { img.src = inp.value; if (isFeatured) media.hero = inp.value; touch(); var v = inp.value.trim(); thumb.style.backgroundImage = v ? 'url(\"' + v.replace(/\"/g, '&quot;') + '\")' : ''; thumb.textContent = v ? (isFeatured ? '★ Featured' : '') : 'Preview'; });
+                var altInp = el('input', { type: 'text', value: img.alt || '', placeholder: 'Alt text' });
+                altInp.style.maxWidth = '140px';
+                altInp.addEventListener('input', function () { img.alt = altInp.value; touch(); });
+                var featBtn = el('button', { class: 'add-btn', title: 'Set as featured' }, isFeatured ? '★ Featured' : '☆ Featured');
+                if (isFeatured) { featBtn.style.background = '#0071e3'; featBtn.style.color = '#fff'; featBtn.style.borderColor = '#0071e3'; }
+                featBtn.addEventListener('click', function () {
+                    media.featuredIndex = idx;
+                    media.images.forEach(function (im, i) { im.featured = i === idx; });
+                    media.hero = img.src;
+                    touch(); rebuild();
+                });
+                var up = el('button', { class: 'icon-btn', title: 'Move up' }, '↑');
+                up.addEventListener('click', function () { if (idx === 0) return; var t = media.images[idx]; media.images[idx] = media.images[idx - 1]; media.images[idx - 1] = t; if (media.featuredIndex === idx) media.featuredIndex = idx - 1; else if (media.featuredIndex === idx - 1) media.featuredIndex = idx; touch(); rebuild(); });
+                var down = el('button', { class: 'icon-btn', title: 'Move down' }, '↓');
+                down.addEventListener('click', function () { if (idx === media.images.length - 1) return; var t = media.images[idx]; media.images[idx] = media.images[idx + 1]; media.images[idx + 1] = t; if (media.featuredIndex === idx) media.featuredIndex = idx + 1; else if (media.featuredIndex === idx + 1) media.featuredIndex = idx; touch(); rebuild(); });
+                var del = el('button', { class: 'icon-btn', title: 'Remove' }, '✕');
+                del.addEventListener('click', function () { if (!confirm('Remove this image?')) return; try { if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src); } catch (e) {} media.images.splice(idx, 1); if (media.featuredIndex === idx) { media.featuredIndex = media.images.length ? 0 : -1; if (media.images[0]) media.images[0].featured = true; } else if (media.featuredIndex > idx) media.featuredIndex--; touch(); rebuild(); });
+                row.appendChild(inp); row.appendChild(altInp); row.appendChild(thumb); row.appendChild(featBtn); row.appendChild(up); row.appendChild(down); row.appendChild(del);
+                editor.appendChild(row);
+            });
+            var add = el('button', { class: 'add-btn' }, '+ Add image');
+            add.addEventListener('click', function () { media.images.push({ src: '', alt: '', featured: false }); if (media.images.length === 1) { media.featuredIndex = 0; media.images[0].featured = true; } touch(); rebuild(); });
+            var fileInp = el('input', { type: 'file' }); fileInp.accept = 'image/*'; fileInp.hidden = true;
+            fileInp.addEventListener('change', function () { var f = fileInp.files[0]; if (!f) return; var url = URL.createObjectURL(f); media.images.push({ src: url, alt: f.name, featured: media.images.length === 0 }); if (media.images.length === 1) media.featuredIndex = 0; touch(); rebuild(); toast('Image uploaded'); });
+            var upBtn = el('button', { class: 'add-btn' }, 'Upload image');
+            upBtn.addEventListener('click', function (e) { e.preventDefault(); fileInp.click(); });
+            editor.appendChild(add); editor.appendChild(upBtn); editor.appendChild(fileInp);
+        }
+        rebuild();
+        wrap.appendChild(editor);
+        return wrap;
+    }
+    function specificationsEditor(label, product) {
+        var specs = product.specifications = product.specifications || [];
+        var wrap = el('div', { class: 'field' });
+        wrap.appendChild(el('label', {}, label));
+        wrap.appendChild(el('div', { class: 'hint' }, 'Optional — hidden on frontend if empty.'));
+        var editor = el('div', { class: 'list-editor' });
+        function rebuild() {
+            editor.innerHTML = '';
+            specs.forEach(function (s, idx) {
+                var card = el('div', { class: 'tier-card' });
+                var row = el('div', { class: 'two-col' });
+                var lW = el('div', { class: 'field' }); lW.appendChild(el('label', {}, 'Label')); var lInp = el('input', { type: 'text', value: s.label || '', placeholder: 'e.g. OS' }); lInp.addEventListener('input', function () { s.label = lInp.value; touch(); }); lW.appendChild(lInp); row.appendChild(lW);
+                var vW = el('div', { class: 'field' }); vW.appendChild(el('label', {}, 'Value')); var vInp = el('input', { type: 'text', value: s.value || '', placeholder: 'e.g. Web, iOS, Android' }); vInp.addEventListener('input', function () { s.value = vInp.value; touch(); }); vW.appendChild(vInp); row.appendChild(vW);
+                card.appendChild(row);
+                var del = el('button', { class: 'icon-btn', title: 'Remove' }, '✕');
+                del.addEventListener('click', function () { if (!confirm('Remove specification?')) return; specs.splice(idx, 1); touch(); rebuild(); });
+                card.appendChild(del);
+                editor.appendChild(card);
+            });
+            var add = el('button', { class: 'add-btn' }, '+ Add specification');
+            add.addEventListener('click', function () { specs.push({ label: '', value: '' }); touch(); rebuild(); });
+            editor.appendChild(add);
+        }
+        rebuild(); wrap.appendChild(editor); return wrap;
+    }
+
+    /* ---------- banner editor (text + preset + visibility) ---------- */
+    var BANNER_PRESETS = ['blue', 'green', 'amber', 'coral', 'ink', 'white'];
+    function bannerEditor(label, path) {
+        var b = getPath(path) || {};
+        var wrap = el('div', { class: 'field banner-field' });
+        wrap.appendChild(el('label', {}, label));
+        var row = el('div', { class: 'banner-row' });
+        var textInp = el('input', { type: 'text', value: b.text || '', placeholder: 'e.g. Sale, -20%, Limited Offer, New' });
+        textInp.addEventListener('input', function () { b.text = textInp.value; touch(); });
+        var presetSel = el('select', {});
+        BANNER_PRESETS.forEach(function (p) {
+            var opt = el('option', { value: p }, p.charAt(0).toUpperCase() + p.slice(1));
+            if (b.preset === p) opt.selected = true;
+            presetSel.appendChild(opt);
+        });
+        presetSel.addEventListener('change', function () { b.preset = presetSel.value; touch(); });
+        row.appendChild(textInp);
+        row.appendChild(presetSel);
+        wrap.appendChild(row);
+        var visWrap = el('label', { class: 'checkbox-row' });
+        var visInp = el('input', { type: 'checkbox' });
+        if (b.visible) visInp.checked = true;
+        visInp.addEventListener('change', function () { b.visible = visInp.checked; touch(); });
+        visWrap.appendChild(visInp);
+        visWrap.appendChild(el('span', {}, 'Show on frontend (top-left of the section)'));
+        wrap.appendChild(visWrap);
+        return wrap;
+    }
+
+    /* ---------- capabilities (feature cards) ---------- */
+    function capabilitiesEditor(label, path) {
+        var cfg = getPath(path) || {};
+        var wrap = el('div', { class: 'field capabilities-field' });
+        wrap.appendChild(el('label', {}, label));
+        wrap.appendChild(el('div', { class: 'hint' }, 'Cards shown uses the setting below; frontend renders gracefully if fewer items exist.'));
+
+        var countWrap = el('div', { class: 'field' });
+        countWrap.appendChild(el('label', {}, 'Cards shown (recommended minimum 7)'));
+        var countInp = el('input', { type: 'number', min: 1, value: cfg.count || 7 });
+        countInp.addEventListener('input', function () {
+            var c = parseInt(countInp.value, 10);
+            if (!isNaN(c) && c >= 1) { cfg.count = c; touch(); }
+        });
+        countWrap.appendChild(countInp);
+        wrap.appendChild(countWrap);
+
+        var items = cfg.items || [];
+        var editor = el('div', { class: 'list-editor' });
+        function rebuild() {
+            editor.innerHTML = '';
+            items.forEach(function (item, idx) {
+                var card = el('div', { class: 'tier-card' });
+                var row2 = el('div', { class: 'two-col' });
+                var iconInp = el('input', { type: 'text', value: item.icon || '', placeholder: 'fa-folder-open' });
+                iconInp.addEventListener('input', function () { item.icon = iconInp.value; touch(); });
+                var iconField = el('div', { class: 'field' });
+                iconField.appendChild(el('label', {}, 'Font Awesome icon class'));
+                iconField.appendChild(iconInp);
+                row2.appendChild(iconField);
+                var titleInp = el('input', { type: 'text', value: item.title || '' });
+                titleInp.addEventListener('input', function () { item.title = titleInp.value; touch(); });
+                var titleField = el('div', { class: 'field' });
+                titleField.appendChild(el('label', {}, 'Card title'));
+                titleField.appendChild(titleInp);
+                row2.appendChild(titleField);
+                card.appendChild(row2);
+                var textInp = el('textarea', {}); textInp.value = item.text || '';
+                textInp.addEventListener('input', function () { item.text = textInp.value; touch(); });
+                var textField = el('div', { class: 'field' });
+                textField.appendChild(el('label', {}, 'Card description'));
+                textField.appendChild(textInp);
+                card.appendChild(textField);
+                var del = el('button', { class: 'icon-btn', title: 'Remove card' }, '✕');
+                del.addEventListener('click', function () { items.splice(idx, 1); touch(); rebuild(); });
+                card.appendChild(del);
+                editor.appendChild(card);
+            });
+            var add = el('button', { class: 'add-btn' }, '+ Add capability card');
+            add.addEventListener('click', function () { items.push({ icon: 'fa-cube', title: '', text: '' }); touch(); rebuild(); });
+            editor.appendChild(add);
+        }
+        rebuild();
+        wrap.appendChild(editor);
+        return wrap;
+    }
+
     /* ---------- pricing editor ---------- */
     function pricingEditor(pricing) {
         var block = el('div', { class: 'section-block' });
-        block.appendChild(el('h2', {}, [icon('fa-tags'), 'Pricing', badge('Tiered')]));
+        block.appendChild(el('h2', {}, [icon('fa-tags'), 'Pricing — Tiered plans', badge('3–4 tiers')]));
 
         /* Quick price correction */
         var quick = el('div', { class: 'section-block quick-price' });
@@ -233,56 +398,184 @@
         quick.appendChild(tq);
         block.appendChild(quick);
 
-        /* Full tier configuration with volume discounts */
+        /* Full tier configuration */
         pricing.tiers.forEach(function (t, i) {
-            var card = el('div', { class: 'tier-card' + (i === 1 ? ' featured' : '') });
-            card.appendChild(el('h3', {}, [t.name, el('span', { class: 'hint' }, 'Tier ' + (i + 1))] ));
+            var card = el('div', { class: 'tier-card' + (t.featured ? ' featured' : '') });
+            card.appendChild(el('h3', {}, [t.name, el('span', { class: 'hint' }, 'Tier ' + (i + 1))]));
             var grid = el('div', { class: 'two-col' });
             grid.appendChild(boundText('Tier name', function () { return t.name; }, function (v) { t.name = v; }));
             grid.appendChild(boundText('Monthly price', function () { return t.monthly; }, function (v) { t.monthly = v; }));
             grid.appendChild(boundText('Annual price', function () { return t.annual; }, function (v) { t.annual = v; }));
+            grid.appendChild(boundText('Old (struck) price', function () { return t.oldPrice; }, function (v) { t.oldPrice = v; }, { hint: 'Shows next to monthly, e.g. $49 — leave empty for no strikethrough' }));
             grid.appendChild(boundText('Volume discount %', function () { return t.volumeDiscount; }, function (v) { t.volumeDiscount = v; }, { hint: 'Bulk/volume discount applied at this level' }));
             grid.appendChild(boundText('Min seats for discount', function () { return t.minSeats; }, function (v) { t.minSeats = v; }));
             grid.appendChild(boundText('CTA label', function () { return t.cta; }, function (v) { t.cta = v; }));
+            grid.appendChild(boundText('CTA link', function () { return t.ctaLink; }, function (v) { t.ctaLink = v; }, { hint: 'e.g. #contact or a full URL' }));
             card.appendChild(grid);
+            var featWrap = el('label', { class: 'checkbox-row' });
+            var featInp = el('input', { type: 'checkbox' });
+            if (t.featured) featInp.checked = true;
+            featInp.addEventListener('change', function () {
+                if (featInp.checked) pricing.tiers.forEach(function (o, j) { o.featured = (j === i); });
+                else t.featured = false;
+                touch(); renderPricing();
+            });
+            featWrap.appendChild(featInp);
+            featWrap.appendChild(el('span', {}, 'Featured tier ("Most popular" pill + highlight)'));
+            card.appendChild(featWrap);
             card.appendChild(boundStringList('Tier features', function () { return t.features; }));
             block.appendChild(card);
         });
+
+        var tierControls = el('div', { class: 'tier-controls' });
+        var addTier = el('button', { class: 'add-btn' }, '+ Add tier');
+        addTier.addEventListener('click', function () {
+            if (pricing.tiers.length >= 4) { toast('Maximum 4 pricing tiers.'); return; }
+            var n = pricing.tiers.length + 1;
+            pricing.tiers.push({
+                name: 'Tier ' + n, monthly: '$—', annual: '', oldPrice: '',
+                volumeDiscount: '0', minSeats: '1', features: ['Feature'],
+                cta: 'Get started', ctaLink: '#contact', featured: false
+            });
+            touch(); renderPricing();
+        });
+        var delTier = el('button', { class: 'add-btn danger' }, '− Remove last tier');
+        delTier.addEventListener('click', function () {
+            if (pricing.tiers.length <= 3) { toast('Minimum 3 pricing tiers required.'); return; }
+            pricing.tiers.pop();
+            touch(); renderPricing();
+        });
+        tierControls.appendChild(addTier);
+        tierControls.appendChild(delTier);
+        block.appendChild(tierControls);
+
+        function renderPricing() { render(); }
+
         return block;
     }
 
     /* ---------- renderers ---------- */
     function renderProduct(key) {
         var p = state.products[key];
+        // ensure migrated fields exist (for old localStorage)
+        p.commerce = p.commerce || { price: '', compareAtPrice: '', badge: '', stockStatus: 'in_stock' };
+        p.taxonomy = p.taxonomy || { category: '', tags: [] };
+        p.specifications = p.specifications || [];
+        p.media = p.media || { images: [], featuredIndex: -1, hero: '', gallery: [], slider: { autoplay: true } };
+        if (!Array.isArray(p.media.images)) p.media.images = [];
+        p.status = p.status || 'active';
+        if (!p.shortDescription) p.shortDescription = p.summary || '';
+        if (!p.featureCards) p.featureCards = (window.GOZMAR_DEFAULTS && window.GOZMAR_DEFAULTS.products && window.GOZMAR_DEFAULTS.products[key] && JSON.parse(JSON.stringify(window.GOZMAR_DEFAULTS.products[key].featureCards))) || { count: 7, items: [] };
+        if (!p.banners) p.banners = { product: { text: '', preset: 'blue', visible: false }, gallery: { text: '', preset: 'amber', visible: false }, pricing: { text: '', preset: 'coral', visible: false } };
         var root = document.getElementById('adminRoot');
         root.innerHTML = '';
-        root.appendChild(el('h1', { class: 'page-title' }, p.navLabel + ' — Product'));
+        var headRow = el('div', { class: 'page-head' });
+        headRow.style.display = 'flex'; headRow.style.alignItems = 'center'; headRow.style.gap = '8px'; headRow.style.marginBottom = '12px';
+        headRow.appendChild(el('h1', { class: 'page-title', style: 'flex:1;margin:0' }, p.navLabel + ' — Product'));
+        var dupBtn = el('button', { class: 'add-btn' }, 'Duplicate');
+        dupBtn.addEventListener('click', function () {
+            var newKey = (key + '_copy').replace(/[^a-z0-9_-]/g, ''); var i = 1; while (state.products[newKey]) newKey = key + '_copy' + i++;
+            state.products[newKey] = JSON.parse(JSON.stringify(p)); state.products[newKey].title += ' (Copy)'; state.products[newKey].navLabel += ' Copy';
+            currentPath = 'products.' + newKey; touch(); buildTabs(); render(); toast('Duplicated');
+        });
+        var delBtn = el('button', { class: 'add-btn danger' }, 'Delete product');
+        delBtn.addEventListener('click', function () {
+            if (Object.keys(state.products).length <= 1) { toast('Cannot delete last product', 'error'); return; }
+            if (!confirm('Delete product "' + p.navLabel + '"? This cannot be undone.')) return;
+            delete state.products[key];
+            (p.media.images || []).forEach(function (im) { try { if (im.src && im.src.startsWith('blob:')) URL.revokeObjectURL(im.src); } catch (e) {} });
+            currentPath = 'products.' + Object.keys(state.products)[0];
+            touch(); buildTabs(); render(); CMS.saveState(state).then(function () { toast('Product deleted', 'success'); });
+        });
+        headRow.appendChild(dupBtn); headRow.appendChild(delBtn);
+        root.appendChild(headRow);
 
         var d = el('div', { class: 'section-block' });
-        d.appendChild(el('h2', {}, [icon('fa-info-circle'), 'Details & descriptions']));
-        d.appendChild(boundText('Tagline', function () { return p.tagline; }, function (v) { p.tagline = v; }));
-        d.appendChild(boundText('Title (feature row)', function () { return p.title; }, function (v) { p.title = v; }));
+        d.appendChild(el('h2', {}, [icon('fa-info-circle'), 'Basic Info']));
+        d.appendChild(el('p', { class: 'hint' }, 'Grouped: Title → H2, Tagline → eyebrow, Short Description → card. Use **bold** to emphasize phrases.'));
+        d.appendChild(boundText('Product Title — frontend H2 & nav', function () { return p.title; }, function (v) { p.title = v; p.navLabel = v; }));
+        d.appendChild(boundText('Nav Label — sidebar', function () { return p.navLabel; }, function (v) { p.navLabel = v; }));
+        d.appendChild(boundText('Tagline — eyebrow', function () { return p.tagline; }, function (v) { p.tagline = v; }));
         d.appendChild(boundText('CTA button label', function () { return p.ctaPrimary; }, function (v) { p.ctaPrimary = v; }));
-        d.appendChild(boundText('Detail marketing heading', function () { return p.detailTitle; }, function (v) { p.detailTitle = v; }));
-        d.appendChild(boundText('Detail section heading', function () { return p.detailHeading; }, function (v) { p.detailHeading = v; }));
-        d.appendChild(boundTextarea('Summary (feature row)', function () { return p.summary; }, function (v) { p.summary = v; }));
-        d.appendChild(boundTextarea('Detail intro', function () { return p.detailIntro; }, function (v) { p.detailIntro = v; }));
+        d.appendChild(boundTextarea('Short Description — card paragraph', function () { return p.shortDescription; }, function (v) { p.shortDescription = v; p.summary = v; }));
+        d.appendChild(boundText('Detail marketing heading — H2', function () { return p.detailTitle; }, function (v) { p.detailTitle = v; }));
+        d.appendChild(boundText('Detail section heading — H3', function () { return p.detailHeading; }, function (v) { p.detailHeading = v; }));
+        d.appendChild(boundTextarea('Detail intro — lede', function () { return p.detailIntro; }, function (v) { p.detailIntro = v; }));
         d.appendChild(boundTextarea('Detail paragraph 1', function () { return p.detailParagraphs[0]; }, function (v) { p.detailParagraphs[0] = v; }));
         d.appendChild(boundTextarea('Detail paragraph 2', function () { return p.detailParagraphs[1]; }, function (v) { p.detailParagraphs[1] = v; }));
         root.appendChild(d);
 
+        var pricingGroup = el('div', { class: 'section-block' });
+        pricingGroup.appendChild(el('h2', {}, [icon('fa-tags'), 'Pricing — Price & Badges']));
+        pricingGroup.appendChild(el('p', { class: 'hint' }, 'Price shown on card & detail. Gracefully hidden if empty.'));
+        pricingGroup.appendChild(boundText('Price (e.g. $29 / Free)', function () { return p.commerce.price; }, function (v) { p.commerce.price = v; }));
+        pricingGroup.appendChild(boundText('Compare-at / Old price (strikethrough, e.g. $49)', function () { return p.commerce.compareAtPrice; }, function (v) { p.commerce.compareAtPrice = v; }, { hint: 'Sale old price — leave empty to hide' }));
+        pricingGroup.appendChild(boundText('Badge (e.g. New, Sale) — card', function () { return p.commerce.badge; }, function (v) { p.commerce.badge = v; }));
+        (function () {
+            var wrap = el('div', { class: 'field' });
+            wrap.appendChild(el('label', {}, 'Stock status — frontend chip'));
+            var sel = el('select', {});
+            [['in_stock', 'In Stock'], ['low_stock', 'Low Stock'], ['out_of_stock', 'Out of Stock']].forEach(function (o) {
+                var opt = el('option', { value: o[0] }, o[1]); if (p.commerce.stockStatus === o[0]) opt.selected = true; sel.appendChild(opt);
+            });
+            sel.addEventListener('change', function () { p.commerce.stockStatus = sel.value; touch(); });
+            wrap.appendChild(sel); pricingGroup.appendChild(wrap);
+        })();
+        root.appendChild(pricingGroup);
+
         var m = el('div', { class: 'section-block' });
-        m.appendChild(el('h2', {}, [icon('fa-images'), 'Media']));
-        m.appendChild(imageField('Hero image URL', 'products.' + key + '.media.hero'));
-        [0, 1, 2].forEach(function (i) {
-            m.appendChild(imageField('Gallery image ' + (i + 1) + ' URL', 'products.' + key + '.media.gallery.' + i));
-        });
+        m.appendChild(el('h2', {}, [icon('fa-images'), 'Images — Product Gallery']));
+        m.appendChild(el('p', { class: 'hint' }, 'Unlimited images. ★ sets Featured (card thumbnail & hero). Active for ALL products.'));
+        m.appendChild(galleryImagesEditor('Gallery images (unlimited)', p));
+        (function () {
+            var wrap = el('label', { class: 'checkbox-row' });
+            var sliderCfg = (p.media.slider = p.media.slider || { autoplay: true });
+            var toggle = el('input', { type: 'checkbox' });
+            if (sliderCfg.autoplay !== false) toggle.checked = true;
+            toggle.addEventListener('change', function () { p.media.slider.autoplay = toggle.checked; touch(); });
+            wrap.appendChild(toggle);
+            wrap.appendChild(el('span', {}, 'Slider autoplay — "A closer look" advances on its own (pauses on hover/focus, respects reduced motion)'));
+            m.appendChild(wrap);
+        })();
         root.appendChild(m);
 
+        var capBlock = el('div', { class: 'section-block' });
+        capBlock.appendChild(el('h2', {}, [icon('fa-th-large'), 'Capabilities — feature cards']));
+        capBlock.appendChild(capabilitiesEditor('Capability cards (frontend grid)', 'products.' + key + '.featureCards'));
+        root.appendChild(capBlock);
+
+        var banBlock = el('div', { class: 'section-block' });
+        banBlock.appendChild(el('h2', {}, [icon('fa-tag'), 'Banner badges (top-left of sections)']));
+        banBlock.appendChild(bannerEditor('Product banner — top-left of detail', 'products.' + key + '.banners.product'));
+        banBlock.appendChild(bannerEditor('Gallery banner — top-left of "A closer look"', 'products.' + key + '.banners.gallery'));
+        banBlock.appendChild(bannerEditor('Pricing banner — top-left of pricing', 'products.' + key + '.banners.pricing'));
+        root.appendChild(banBlock);
+
         var f = el('div', { class: 'section-block' });
-        f.appendChild(el('h2', {}, [icon('fa-list'), 'Features']));
-        f.appendChild(boundStringList('Feature list', function () { return p.features; }));
+        f.appendChild(el('h2', {}, [icon('fa-list'), 'Details — Features']));
+        f.appendChild(boundStringList('Feature list — checkmarks', function () { return p.features; }));
         root.appendChild(f);
+
+        var tx = el('div', { class: 'section-block' });
+        tx.appendChild(el('h2', {}, [icon('fa-layer-group'), 'Details — Category, Tags, Specifications']));
+        tx.appendChild(boundText('Category — e.g. BusinessApplication', function () { return p.taxonomy.category; }, function (v) { p.taxonomy.category = v; }));
+        tx.appendChild(boundStringList('Tags — chips', function () { return p.taxonomy.tags; }));
+        tx.appendChild(specificationsEditor('Specifications (table)', p));
+        root.appendChild(tx);
+
+        var vis = el('div', { class: 'section-block' });
+        vis.appendChild(el('h2', {}, [icon('fa-eye'), 'Visibility — Status']));
+        (function () {
+            var wrap = el('div', { class: 'field' });
+            wrap.appendChild(el('label', {}, 'Status — archived hides on frontend'));
+            var sel = el('select', {});
+            [['active', 'Active (visible)'], ['draft', 'Draft'], ['archived', 'Archived (hidden)']].forEach(function (o) {
+                var opt = el('option', { value: o[0] }, o[1]); if (p.status === o[0]) opt.selected = true; sel.appendChild(opt);
+            });
+            sel.addEventListener('change', function () { p.status = sel.value; touch(); });
+            wrap.appendChild(sel); vis.appendChild(wrap);
+        })();
+        root.appendChild(vis);
 
         root.appendChild(pricingEditor(p.pricing));
     }
@@ -380,11 +673,16 @@
     function buildTabs() {
         var nav = document.getElementById('tabs');
         nav.innerHTML = '';
-        nav.appendChild(el('div', { class: 'group-label' }, 'Products'));
-        Object.keys(state.products).forEach(function (key) {
+        var prodKeys = Object.keys(state.products);
+        nav.appendChild(el('div', { class: 'group-label' }, 'Products (' + prodKeys.length + ')'));
+        prodKeys.forEach(function (key) {
+            var p = state.products[key];
+            var isArchived = p.status === 'archived';
+            var suffix = isArchived ? ' (archived)' : p.status === 'draft' ? ' • draft' : '';
             var btn = el('button', { class: 'admin-tab' + (currentPath === 'products.' + key ? ' active' : '') }, [
-                icon('fa-cube'), state.products[key].navLabel
+                icon(isArchived ? 'fa-eye-slash' : 'fa-cube'), p.navLabel + suffix
             ]);
+            if (isArchived) btn.style.opacity = '0.6';
             btn.addEventListener('click', function () { currentPath = 'products.' + key; buildTabs(); render(); });
             nav.appendChild(btn);
         });
@@ -406,23 +704,29 @@
     }
 
     /* ---------- actions ---------- */
-    function toast(msg) {
-        var t = el('div', { class: 'toast' }, msg);
+    function toast(msg, tone) {
+        var t = el('div', { class: 'toast ' + (tone || '') }, msg);
+        if (tone === 'error') t.style.background = '#b3261e';
+        if (tone === 'success') t.style.background = '#0a7a3a';
         document.body.appendChild(t);
         requestAnimationFrame(function () { t.classList.add('show'); });
-        setTimeout(function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 300); }, 1800);
+        setTimeout(function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 300); }, tone === 'error' ? 2600 : 1800);
     }
 
     function save() {
+        var btn = document.getElementById('btnSave');
+        var orig = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
         CMS.saveState(state).then(function (ok) {
             if (ok) {
                 dirty = false;
                 var f = document.getElementById('dirtyFlag'); if (f) f.hidden = true;
-                toast('Changes saved');
+                toast('✓ Changes saved', 'success');
             } else {
-                toast('Save failed (storage unavailable)');
+                toast('Save failed (storage unavailable)', 'error');
             }
-        });
+        }).catch(function (e) { toast('Save failed: ' + (e.message || 'error'), 'error'); })
+        .then(function () { if (btn) { btn.disabled = false; btn.innerHTML = orig || 'Save changes'; } });
     }
     function reset() {
         if (!window.confirm('Discard all edits and restore default content?')) return;
@@ -772,7 +1076,7 @@
     /* boot: authenticate before exposing the CMS when PocketBase is configured */
     if (authRequired) {
         var session = CMS.getSession();
-        if (session && session.access_token && (!session.expires_at || session.expires_at > Date.now())) showDashboard();
+        if (session && String(session).trim()) showDashboard();
         else showLogin();
     } else {
         showDashboard();

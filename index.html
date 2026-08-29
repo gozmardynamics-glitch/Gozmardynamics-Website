@@ -197,8 +197,12 @@
             </div>
         </section>
 
-        <!-- ========== PRODUCTS ========== -->
+        <!-- ========== PRODUCTS — SINGLE REUSABLE TEMPLATE (backend-driven) ========== -->
         <section class="products-wrap" id="products" aria-label="Our products">
+            <!-- Dynamic mount: all products render here from CMS (see js/cms.js: productTemplateHTML). Keeps ONE source of truth. -->
+            <div id="productsMount" aria-live="polite"></div>
+            <!-- Fallback static markup below is hidden after dynamic mount renders (preserved for no-JS). -->
+            <div id="productsStaticFallback">
 
             <!-- Product 1: Gozmar DMS -->
             <article class="product-section section" id="product-dms">
@@ -221,8 +225,10 @@
                 </div>
 
                 <!-- ===== Gozmar DMS — detail ===== -->
-                <div class="product-detail" id="dms-detail" data-product="dms">
+                <div class="product-detail" id="dms-detail"
+                        data-bannerslot="true" data-product="dms">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="dms-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">Corporate Document Management</p>
                             <h2>Corporate document management, reimagined.</h2>
@@ -255,6 +261,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="dms-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -278,14 +286,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="dms-gallery-1" role="img" aria-label="Dashboard placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Dashboard</span></div>
-                                <div class="media-placeholder" data-field="dms-gallery-2" role="img" aria-label="Search placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Search</span></div>
-                                <div class="media-placeholder" data-field="dms-gallery-3" role="img" aria-label="Compliance placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Compliance</span></div>
-                            </div>
+                            <div class="slider-host" data-field="dms-gallery"></div>
+                            <span class="banner-slot" data-field="dms-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="dms-pricing">
+                        <div class="pricing reveal" data-field="dms-pricing"><span class="banner-slot" data-field="dms-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -349,8 +354,10 @@
                 </div>
 
                 <!-- ===== My Family — detail ===== -->
-                <div class="product-detail" id="myfamily-detail" data-product="myfamily">
+                <div class="product-detail" id="myfamily-detail"
+                        data-bannerslot="true" data-product="myfamily">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="myfamily-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">Family Building &amp; Home Supervision</p>
                             <h2>Your home, supervised and connected.</h2>
@@ -383,6 +390,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="myfamily-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -406,14 +415,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="myfamily-gallery-1" role="img" aria-label="Live view placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Live View</span></div>
-                                <div class="media-placeholder" data-field="myfamily-gallery-2" role="img" aria-label="Calendar placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Calendar</span></div>
-                                <div class="media-placeholder" data-field="myfamily-gallery-3" role="img" aria-label="Alerts placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Alerts</span></div>
-                            </div>
+                            <div class="slider-host" data-field="myfamily-gallery"></div>
+                            <span class="banner-slot" data-field="myfamily-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="myfamily-pricing">
+                        <div class="pricing reveal" data-field="myfamily-pricing"><span class="banner-slot" data-field="myfamily-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -477,8 +483,10 @@
                 </div>
 
                 <!-- ===== Gozmar Freight — detail ===== -->
-                <div class="product-detail" id="freight-detail" data-product="freight">
+                <div class="product-detail" id="freight-detail"
+                        data-bannerslot="true" data-product="freight">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="freight-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">Shipping &amp; Freight Management</p>
                             <h2>Shipping and freight management, simplified.</h2>
@@ -511,6 +519,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="freight-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -534,14 +544,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="freight-gallery-1" role="img" aria-label="Control tower placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Control Tower</span></div>
-                                <div class="media-placeholder" data-field="freight-gallery-2" role="img" aria-label="Tracking placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Tracking</span></div>
-                                <div class="media-placeholder" data-field="freight-gallery-3" role="img" aria-label="Documents placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Documents</span></div>
-                            </div>
+                            <div class="slider-host" data-field="freight-gallery"></div>
+                            <span class="banner-slot" data-field="freight-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="freight-pricing">
+                        <div class="pricing reveal" data-field="freight-pricing"><span class="banner-slot" data-field="freight-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -605,8 +612,10 @@
                 </div>
 
                 <!-- ===== Mylife — detail ===== -->
-                <div class="product-detail" id="mylife-detail" data-product="mylife">
+                <div class="product-detail" id="mylife-detail"
+                        data-bannerslot="true" data-product="mylife">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="mylife-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">Personal Organiser &amp; Productivity</p>
                             <h2>Your personal organiser, productivity, and private planner.</h2>
@@ -639,6 +648,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="mylife-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -662,14 +673,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="mylife-gallery-1" role="img" aria-label="Today view placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Today View</span></div>
-                                <div class="media-placeholder" data-field="mylife-gallery-2" role="img" aria-label="Journal placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Journal</span></div>
-                                <div class="media-placeholder" data-field="mylife-gallery-3" role="img" aria-label="Goals placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Goals</span></div>
-                            </div>
+                            <div class="slider-host" data-field="mylife-gallery"></div>
+                            <span class="banner-slot" data-field="mylife-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="mylife-pricing">
+                        <div class="pricing reveal" data-field="mylife-pricing"><span class="banner-slot" data-field="mylife-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -733,8 +741,10 @@
                 </div>
 
                 <!-- ===== Gozmar Task — detail ===== -->
-                <div class="product-detail" id="task-detail" data-product="task">
+                <div class="product-detail" id="task-detail"
+                        data-bannerslot="true" data-product="task">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="task-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">Team Task Management</p>
                             <h2>Team task management, accelerated by AI.</h2>
@@ -767,6 +777,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="task-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -790,14 +802,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="task-gallery-1" role="img" aria-label="Board placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Board</span></div>
-                                <div class="media-placeholder" data-field="task-gallery-2" role="img" aria-label="Timeline placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Timeline</span></div>
-                                <div class="media-placeholder" data-field="task-gallery-3" role="img" aria-label="Insights placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Insights</span></div>
-                            </div>
+                            <div class="slider-host" data-field="task-gallery"></div>
+                            <span class="banner-slot" data-field="task-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="task-pricing">
+                        <div class="pricing reveal" data-field="task-pricing"><span class="banner-slot" data-field="task-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -861,8 +870,10 @@
                 </div>
 
                 <!-- ===== Grey Auction — detail ===== -->
-                <div class="product-detail" id="auction-detail" data-product="auction">
+                <div class="product-detail" id="auction-detail"
+                        data-bannerslot="true" data-product="auction">
                     <div class="container">
+                        <span class="banner-slot banner-slot-product" data-field="auction-product-banner"></span>
                         <div class="detail-head reveal">
                             <p class="product-tagline">AI-Powered Auction &amp; Collaboration</p>
                             <h2>AI-powered auction and collaboration platform.</h2>
@@ -895,6 +906,8 @@
                             </div>
                         </div>
 
+                        <div class="capabilities reveal"><h3>Capabilities</h3><div class="cap-grid" data-field="auction-capabilities"></div></div>
+
                         <div class="how-it-works reveal">
                             <h3>How it works</h3>
                             <div class="steps">
@@ -918,14 +931,11 @@
 
                         <div class="gallery reveal">
                             <h3>A closer look</h3>
-                            <div class="gallery-grid">
-                                <div class="media-placeholder" data-field="auction-gallery-1" role="img" aria-label="Live room placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Live Room</span></div>
-                                <div class="media-placeholder" data-field="auction-gallery-2" role="img" aria-label="Valuations placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Valuations</span></div>
-                                <div class="media-placeholder" data-field="auction-gallery-3" role="img" aria-label="Transactions placeholder"><i class="fas fa-image" aria-hidden="true"></i><span>Transactions</span></div>
-                            </div>
+                            <div class="slider-host" data-field="auction-gallery"></div>
+                            <span class="banner-slot" data-field="auction-gallery-banner"></span>
                         </div>
 
-                        <div class="pricing reveal" data-field="auction-pricing">
+                        <div class="pricing reveal" data-field="auction-pricing"><span class="banner-slot" data-field="auction-pricing-banner"></span>
                             <h3>Pricing</h3>
                             <div class="price-grid">
                                 <div class="price-tier">
@@ -968,11 +978,12 @@
                 </div>
             </article>
 
-            <!-- Product Overview Grid -->
-            <div class="product-overview reveal" style="text-align:center; margin-top: 60px;">
+            </div><!-- end productsStaticFallback -->
+            <!-- Product Overview Grid — backend-driven (auto-updates when products added) -->
+            <div class="product-overview reveal" style="text-align:center; margin-top: 60px;" id="productOverview">
                 <h2 style="margin-bottom: 20px; font-size: 2rem;">Explore Our Solutions</h2>
                 <p style="color: #6e6e73; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">Jump to any product that interests you</p>
-                <div class="product-nav-grid">
+                <div class="product-nav-grid" id="productNavGrid">
                     <a href="#dms-detail" class="product-nav-item reveal">Gozmar DMS</a>
                     <a href="#myfamily-detail" class="product-nav-item reveal">My Family</a>
                     <a href="#freight-detail" class="product-nav-item reveal">Gozmar Freight</a>
