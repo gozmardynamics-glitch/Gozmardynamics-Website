@@ -1,7 +1,21 @@
+/* Gozmar CMS full E2E suite (jsdom based).
+   Run: node e2e-full.js
+   Requires jsdom. Bundled under node_modules/ if available, otherwise
+   resolves from the opencode temp dir used during development.
+   Fallback mock harness: e2e-test.js (zero-dependency smoke).
+*/
+
 /* E2E test for Gozmar CMS: admin -> localStorage -> front-end */
 const fs = require('fs');
 const path = require('path');
-const { JSDOM } = require('jsdom');
+function loadJsdom(){
+  const paths=['jsdom'];
+  const alt='C:/Users/EBELEJ~1/AppData/Local/Temp/opencode/node_modules';
+  try{ return require('jsdom'); }catch(e){}
+  try{ return require(alt+'/jsdom'); }catch(e){}
+  throw new Error('jsdom not found. Install with: npm i jsdom');
+}
+const { JSDOM } = loadJsdom();
 
 const ROOT = 'C:/Users/Ebele John/Desktop/Gozmar-Dynamics-Website';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');

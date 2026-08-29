@@ -211,7 +211,7 @@ Gozmar-Dynamics-Website/
 - [ ] Replace Font Awesome CDN with inline SVG (optional, dependency-free).
 - [ ] Add PocketBase image file uploads (currently URL/blob; move to `pb.files` for persistence).
 - [ ] Add product search/filter in admin when >15 products (tabs scroll).
-- [ ] E2E Cypress/Playwright: automate the create→featured→save→view flow (manual E2E verified via `e2e-test.js`).
+- [x] E2E suites committed: `e2e-test.js` (zero-dependency smoke, 40 checks) and `e2e-full.js` (jsdom-based, 72 checks covering slider/capabilities/banners/tiers/markup).
 
 ---
 
