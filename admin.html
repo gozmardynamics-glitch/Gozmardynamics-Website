@@ -6,8 +6,8 @@
     <title>Gozmar CMS — Admin Dashboard</title>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/styles.css?v=20260828b">
+    <link rel="stylesheet" href="css/admin.css?v=20260828b">
 </head>
 <body class="admin-body">
     <header class="admin-topbar">
@@ -91,9 +91,35 @@
         </aside>
     </div>
 
-    <script src="js/cms-config.js"></script>
-    <script src="js/cms-data.js"></script>
-    <script src="js/cms.js"></script>
-    <script src="js/admin.js"></script>
+    <script src="js/cms-config.js?v=20260828b"></script>
+    <script src="js/cms-data.js?v=20260828b"></script>
+    <script src="js/cms.js?v=20260828b"></script>
+    <script src="js/admin.js?v=20260828b"></script>
+    <script>
+      // Cache-bust + localStorage migration guard: clear corrupted old saves
+      (function(){
+        try {
+          var raw = localStorage.getItem('gozmar_cms_v1');
+          if(raw){
+            var d = JSON.parse(raw);
+            if(!d.products || !d.site) throw new Error('invalid');
+            // if old products lack new fields, force refresh from defaults on next load
+            var needsMigrate = Object.values(d.products).some(function(p){ return !p.commerce || !p.media || !Array.isArray(p.media.images); });
+            if(needsMigrate) {
+              console.warn('Migrating old CMS data — clearing stale localStorage');
+              localStorage.removeItem('gozmar_cms_v1');
+              location.reload();
+            }
+          }
+        } catch(e){ try{ localStorage.removeItem('gozmar_cms_v1'); }catch(ee){} }
+        // Global error trap to show why admin is blank
+        window.addEventListener('error', function(ev){
+          var root = document.getElementById('adminRoot');
+          if(root && !root.innerHTML.trim()){
+            root.innerHTML = '<div class="section-block" style="border-color:#f5b5b5;background:#fff0f0"><h2>Admin failed to load</h2><p style="color:#8a0010">'+ (ev.message||ev.error||'Unknown error') +'</p><p class="hint">Try: hard refresh Ctrl+F5, then <a href="#" onclick="localStorage.removeItem(\'gozmar_cms_v1\');location.reload();return false">clear saved data and reload</a>. Check console (F12) for details.</p></div>';
+          }
+        });
+      })();
+    </script>
 </body>
 </html>

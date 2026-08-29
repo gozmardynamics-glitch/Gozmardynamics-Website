@@ -638,10 +638,24 @@
     }
 
     function render() {
-        var parts = currentPath.split('.');
-        if (parts[0] === 'products') renderProduct(parts[1]);
-        else renderSiteSection(parts[1]);
-        updatePreview();
+        try {
+            var parts = currentPath.split('.');
+            if (parts[0] === 'products') {
+                if (!state.products[parts[1]]) {
+                    currentPath = 'products.' + Object.keys(state.products)[0];
+                    parts = currentPath.split('.');
+                }
+                renderProduct(parts[1]);
+            } else renderSiteSection(parts[1]);
+            updatePreview();
+        } catch (e) {
+            try {
+                var root = document.getElementById('adminRoot');
+                if (root) root.innerHTML = '<div class="section-block" style="border-color:#f5b5b5;background:#fff0f0"><h2 style="color:#8a0010">Render error</h2><p>' + esc(e.message || String(e)) + '</p><p class="hint">Try resetting: <a href="#" onclick="localStorage.removeItem(\'gozmar_cms_v1\');location.reload();return false">clear saved data</a></p></div>';
+                console.error(e);
+                toast('Render error: ' + (e.message||e), 'error');
+            } catch (ee) {}
+        }
     }
 
     /* ---------- preview ---------- */
